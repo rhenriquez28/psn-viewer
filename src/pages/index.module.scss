@@ -1,0 +1,18 @@
+.psPlus::after {
+    --dimensions: 30px;
+    content: '';
+    width: var(--dimensions);
+    height: var(--dimensions);
+    background-size: var(--dimensions);
+    background-image: url('/ps-plus.png');
+    position: absolute;
+    right: -8px;
+    bottom: 0px;
+    z-index: 1;
+}
+
+.trophyCounter {
+    &:not(:first-child) {
+        @apply ml-3;
+    }
+}

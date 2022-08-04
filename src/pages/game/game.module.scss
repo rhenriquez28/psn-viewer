@@ -1,0 +1,37 @@
+.platformBadge {
+    &:not(:first-child) {
+        @apply ml-4;
+    }
+}
+
+.metadataCell {
+    @apply flex justify-center;
+
+    &Label {
+        @apply text-zinc-200 font-bold;
+    }
+
+    &Data {
+        @apply ml-2;
+    }
+}
+
+.metadata {
+    &:not(.trophyType) {
+        @apply pr-4 relative;
+
+        &::after {
+            @apply w-[1.5px] h-14 bg-gray-300 absolute right-[-1px];
+            content: '';
+            top: calc(50% - 26px);
+        }
+    }
+
+    &:not(.earnedTime) {
+        @apply pl-4;
+    }
+}
+
+.earned {
+    @apply bg-green-100 hover:bg-green-200;
+}

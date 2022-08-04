@@ -1,3 +1,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@import "~antd/dist/antd.min.css";
+@import "~react-image-gallery/styles/css/image-gallery.css";
+
+body {
+  @apply w-full h-full relative;
+}
+
+.badge {
+  @apply border-2 px-1 text-sm font-semibold;
+}
+
+.badge--platform {
+  @apply border-black text-black;
+}

@@ -1,13 +1,18 @@
 import classnames from "classnames";
 import type { NextPage } from "next";
+import { signIn, signOut } from "next-auth/react";
 import Link from "next/link";
 import TrophyIcon from "../components/TrophyIcon";
 import { TrophyType } from "../types";
+import { trpc } from "../utils/trpc";
 import styles from "./index.module.scss";
 
 const Home: NextPage = () => {
+  const hello = trpc.useQuery(["example.hello"]);
   return (
     <div className="p-8 flex flex-col items-center">
+      <button onClick={() => signIn()}>Sign in</button>
+      <button onClick={() => signOut()}>Sign out</button>
       <ProfileSummary className="mb-4 max-w-xl" />
 
       <div>My Games</div>

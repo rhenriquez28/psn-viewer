@@ -1,29 +1,42 @@
 import NextAuth, { type NextAuthOptions } from "next-auth";
-import DiscordProvider from "next-auth/providers/discord";
-
-// Prisma adapter for NextAuth, optional and can be removed
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import { prisma } from "../../../server/db/client";
-import { env } from "../../../env/server.mjs";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { exchangeCodeForAccessToken, exchangeNpssoForCode } from "psn-api";
 
 export const authOptions: NextAuthOptions = {
-  // Include user.id on session
   callbacks: {
-    session({ session, user }) {
-      if (session.user) {
-        session.user.id = user.id;
+    jwt({ token, user }) {
+      if (user) {
+        token.authorization = user.authorization;
+      }
+      return token;
+    },
+    session({ session, token }) {
+      if (token) {
+        session.authorization = token.authorization;
       }
       return session;
     },
   },
-  // Configure one or more authentication providers
-  adapter: PrismaAdapter(prisma),
   providers: [
-    DiscordProvider({
-      clientId: env.DISCORD_CLIENT_ID,
-      clientSecret: env.DISCORD_CLIENT_SECRET,
+    CredentialsProvider({
+      credentials: {
+        npsso: { label: "NPSSO", type: "text" },
+      },
+      async authorize(credentials, req) {
+        if (!credentials?.npsso) {
+          return null;
+        }
+
+        try {
+          const accessCode = await exchangeNpssoForCode(credentials.npsso);
+          const authorization = await exchangeCodeForAccessToken(accessCode);
+          const user = { id: 1, authorization };
+          return user;
+        } catch (error) {
+          return null;
+        }
+      },
     }),
-    // ...add more providers here
   ],
 };
 

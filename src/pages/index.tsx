@@ -1,14 +1,41 @@
+import { createSSGHelpers } from "@trpc/react/ssg";
 import classnames from "classnames";
-import type { NextPage } from "next";
+import type {
+  GetServerSideProps,
+  InferGetServerSidePropsType,
+  NextPage,
+} from "next";
 import { signIn, signOut } from "next-auth/react";
 import Link from "next/link";
+import superjson from "superjson";
 import TrophyIcon from "../components/TrophyIcon";
+import { appRouter } from "../server/router";
+import { createContext } from "../server/router/context";
 import { TrophyType } from "../types";
 import { trpc } from "../utils/trpc";
 import styles from "./index.module.scss";
 
-const Home: NextPage = () => {
-  const hello = trpc.useQuery(["example.hello"]);
+export const getServerSideProps: GetServerSideProps = async () => {
+  const ssg = createSSGHelpers({
+    router: appRouter,
+    ctx: await createContext(),
+    transformer: superjson,
+  });
+
+  await ssg.fetchQuery("dashboard");
+
+  return {
+    props: {
+      trpcState: ssg.dehydrate(),
+    },
+  };
+};
+
+const Home: NextPage<
+  InferGetServerSidePropsType<typeof getServerSideProps>
+> = () => {
+  const dashboard = trpc.useQuery(["dashboard"]);
+  console.log(dashboard);
   return (
     <div className="p-8 flex flex-col items-center">
       <button onClick={() => signIn()}>Sign in</button>

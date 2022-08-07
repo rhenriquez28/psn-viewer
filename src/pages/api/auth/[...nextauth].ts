@@ -13,6 +13,7 @@ export const authOptions: NextAuthOptions = {
     session({ session, token }) {
       if (token) {
         session.authorization = token.authorization;
+        session.authPayload = { accessToken: token.authorization.accessToken };
       }
       return session;
     },
@@ -30,7 +31,7 @@ export const authOptions: NextAuthOptions = {
         try {
           const accessCode = await exchangeNpssoForCode(credentials.npsso);
           const authorization = await exchangeCodeForAccessToken(accessCode);
-          const user = { id: 1, authorization };
+          const user = { authorization };
           return user;
         } catch (error) {
           return null;

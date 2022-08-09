@@ -1,11 +1,13 @@
-import { Tabs } from "antd";
+import { Spin, Tabs } from "antd";
 import classNames from "classnames";
-import type { GetServerSideProps, NextPage } from "next";
+import type { NextPage } from "next";
 import Image from "next/image";
+import { useRouter } from "next/router";
 import React from "react";
 import ImageGallery, { ReactImageGalleryItem } from "react-image-gallery";
-import { TrophyType } from "../../types";
-import styles from "./game.module.scss";
+import styles from "../styles/game.module.scss";
+import { ArrayElement } from "../types";
+import { inferQueryOutput, trpc } from "../utils/trpc";
 
 const { TabPane } = Tabs;
 
@@ -19,7 +21,18 @@ type GameProps = {
 
 type GameSubProps = { images: GameImages };
 
-export const getServerSideProps: GetServerSideProps = async () => {
+const Game: NextPage = () => {
+  const { query } = useRouter();
+  const { name, npCommunicationId, isPS5 } = query;
+  const { data, isLoading } = trpc.useQuery([
+    "game",
+    {
+      name: name as string,
+      npCommunicationId: npCommunicationId as string,
+      isPS5: isPS5 === "true",
+    },
+  ]);
+
   const summaryImages = [
     "https://image.api.playstation.com/vulcan/ap/rnd/202101/2921/x64hEmgvhgxpXc9z9hpyLAyQ.jpg",
     "https://image.api.playstation.com/vulcan/ap/rnd/202101/2921/DwVjpbKOsFOyPdNzmSTSWuxG.png",
@@ -37,20 +50,12 @@ export const getServerSideProps: GetServerSideProps = async () => {
   const description =
     "BLAST YOUR WAY THROUGH AN INTERDIMENSIONAL ADVENTURE<br /><br />Ratchet and Clank are back! Help them stop a robotic emperor intent on conquering cross-dimensional worlds, with their own universe next in the firing line. Witness the evolution of the dream team as they're joined by Rivet – a Lombax resistance fighter from another dimension.<br /><br />- Blast your way home with an arsenal of outrageous weaponry. <br />- Experience the shuffle of dimensional rifts and dynamic gameplay. <br />- Explore never-before-seen planets and alternate dimension versions of old favorites.<br /><br />PS5 FEATURES: <br />- Feel in-game actions through the haptic feedback of the DualSense wireless controller. <br />- Take full control of advanced weapon mechanics, made possible by adaptive triggers. <br />- Planet-hop at hyper-speed via the near-instant loading of the PS5 console's SSD. <br />- Immerse your ears with Tempest 3D AudioTech* as you work to save the universe. <br />- Enhanced lighting and ray tracing render dazzling in-game worlds – displayed in crisp, dynamic 4K and HDR**. <br />- Choose Performance Mode to enjoy targeted 60 frames per second gameplay***.";
 
-  return {
-    props: {
-      summaryImages,
-      mediaImages,
-      description,
-    },
-  };
-};
+  if (isLoading) {
+    <div className="flex items-center justify-center">
+      <Spin size="large" />
+    </div>;
+  }
 
-const Game: NextPage<GameProps> = ({
-  summaryImages,
-  mediaImages,
-  description,
-}) => {
   return (
     <>
       <GameSummary images={summaryImages} />
@@ -59,30 +64,11 @@ const Game: NextPage<GameProps> = ({
           <GameDetails images={mediaImages} description={description} />
         </TabPane>
         <TabPane tab="Trophies" key="2">
-          <div className="mb-4">
-            <TrophyCard type="bronze" earned={true} />
-          </div>
-          <div className="mb-4">
-            <TrophyCard type="silver" />
-          </div>
-          <div className="mb-4">
-            <TrophyCard type="gold" />
-          </div>
-          <div className="mb-4">
-            <TrophyCard type="platinum" />
-          </div>
-          <div className="mb-4">
-            <TrophyCard type="bronze" />
-          </div>
-          <div className="mb-4">
-            <TrophyCard type="bronze" />
-          </div>
-          <div className="mb-4">
-            <TrophyCard type="bronze" />
-          </div>
-          <div className="mb-4">
-            <TrophyCard type="bronze" />
-          </div>
+          {data?.trophies?.map((trophy, index) => (
+            <div key={index} className="mb-4">
+              <TrophyCard trophy={trophy} />
+            </div>
+          ))}
         </TabPane>
       </Tabs>
     </>
@@ -102,6 +88,7 @@ const GameSummary: React.FC<GameSubProps> = ({ images }) => {
           layout="fill"
           objectFit="cover"
           objectPosition="right 33%"
+          priority={true}
           alt="Game Cover Image"
         />
       </div>
@@ -175,63 +162,63 @@ const GameDetails: React.FC<GameSubProps & { description: string }> = ({
   );
 };
 
-const TrophyCard: React.FC<{ earned?: boolean; type: TrophyType }> = ({
-  earned,
-  type,
+const TrophyCard: React.FC<{
+  trophy: ArrayElement<NonNullable<inferQueryOutput<"game">["trophies"]>>;
+}> = ({
+  trophy: {
+    name,
+    detail,
+    isEarned,
+    earnedOn,
+    earnedRate,
+    iconUrl,
+    rarity,
+    type,
+  },
 }) => {
-  const dateEarned = Intl.DateTimeFormat("en-US", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date("2021-08-15T21:22:08Z"));
-
-  const timeEarned = Intl.DateTimeFormat("en-US", {
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-  }).format(new Date("2021-08-15T21:22:08Z"));
-
   return (
     <div
       className={classNames(
         "p-4 w-full h-fit shadow-lg flex items-center justify-between hover:bg-sky-100",
-        { [styles.earned!]: earned }
+        { [styles.earned!]: isEarned }
       )}
     >
       <div className="flex items-center min-w-0">
         <div
           className={classNames(
-            "w-28 h-28 bg-gray-600 flex-shrink-0 border-[8px] border-gray-300",
-            { "border-green-500": earned }
+            "w-28 h-28 relative flex-shrink-0 border-[8px] border-gray-300",
+            { "border-green-500": isEarned }
           )}
-        ></div>
+        >
+          <Image src={iconUrl} layout="fill" />
+        </div>
 
         <div className="mx-4 min-w-0">
           <div className="text-black text-base overflow-hidden whitespace-nowrap text-ellipsis mb-2">
-            Rift Apart
+            {name}
           </div>
 
           <div className="text-black text-base overflow-hidden whitespace-nowrap text-ellipsis">
-            Get Separated in Nefarious City
+            {detail}
           </div>
         </div>
       </div>
 
       <div className="flex justify-end items-center">
-        {earned ? (
+        {isEarned && earnedOn !== "unearned" ? (
           <div
             className={`flex flex-col text-center ${styles.metadata} ${styles.earnedTime}`}
           >
-            <div className="text-base">{dateEarned}</div>
-            <div>{timeEarned}</div>
+            <div className="text-base">{dateEarned(earnedOn)}</div>
+            <div>{timeEarned(earnedOn)}</div>
           </div>
         ) : null}
 
         <div
           className={`${styles.metadata} flex flex-col text-center text-gray-700`}
         >
-          <div className="text-3xl">88.4%</div>
-          <div className="text-xs uppercase">common</div>
+          <div className="text-3xl">{`${earnedRate}%`}</div>
+          <div className="text-xs uppercase">{rarity}</div>
         </div>
 
         <div
@@ -243,3 +230,17 @@ const TrophyCard: React.FC<{ earned?: boolean; type: TrophyType }> = ({
     </div>
   );
 };
+
+const dateEarned = (earnedOn: string) =>
+  Intl.DateTimeFormat("en-US", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(new Date(earnedOn));
+
+const timeEarned = (earnedOn: string) =>
+  Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+  }).format(new Date(earnedOn));

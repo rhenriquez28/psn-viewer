@@ -14,6 +14,10 @@ export default defineNextConfig({
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: ["image.api.playstation.com"],
+    domains: [
+      "image.api.playstation.com",
+      "static-resource.np.community.playstation.net",
+      "psnobj.prod.dl.playstation.net",
+    ],
   },
 });

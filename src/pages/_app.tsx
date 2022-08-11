@@ -6,6 +6,7 @@ import superjson from "superjson";
 import Layout from "../components/Layout";
 import type { AppRouter } from "../server/router";
 import "../styles/globals.css";
+import { omit } from "../utils/omit";
 
 const MyApp: AppType = ({
   Component,
@@ -44,10 +45,20 @@ export default withTRPC<AppRouter>({
        * @link https://react-query.tanstack.com/reference/QueryClient
        */
       // queryClientConfig: { defaultOptions: { queries: { staleTime: 60 } } },
+      headers: () => {
+        if (ctx?.req) {
+          // on ssr, forward client's headers to the server
+          return {
+            ...omit(ctx.req.headers, "connection"),
+            "x-ssr": "1",
+          };
+        }
+        return {};
+      },
     };
   },
   /**
    * @link https://trpc.io/docs/ssr
    */
-  ssr: false,
+  ssr: true,
 })(MyApp);

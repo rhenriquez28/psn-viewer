@@ -12,6 +12,41 @@ datasource db {
   referentialIntegrity = "prisma"
 }
 
-model Example {
-    id String @id @default(cuid())
+model Game {
+    npCommunicationId String @id @unique
+    titleId String
+    name String
+    description String @db.Text
+    iconUrl String
+    coverUrl String
+    screenshots Screenshots[]
+    previewVideoUrl String?
+    genres Genre[]
+    publisher String
+    developer String?
+    platforms Platform[]
+    psStoreUrl String
+    platPricesUrl String
+    rating String?
+    ps4Size BigInt?
+    ps5Size BigInt?
+}
+
+model Genre {
+  id Int @id @default(autoincrement())
+  name String
+  games Game[]
+}
+
+model Screenshots {
+  id Int @id @default(autoincrement())
+  url String
+  game Game @relation(fields: [gameId], references: [npCommunicationId])
+  gameId String
+}
+
+model Platform{
+  id Int @id @default(autoincrement())
+  name String
+  games Game[]
 }

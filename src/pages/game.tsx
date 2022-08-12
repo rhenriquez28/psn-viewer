@@ -6,20 +6,12 @@ import { useRouter } from "next/router";
 import React from "react";
 import ImageGallery, { ReactImageGalleryItem } from "react-image-gallery";
 import styles from "../styles/game.module.scss";
-import { ArrayElement } from "../types";
+import { ArrayElement, GamePlatforms } from "../types";
 import { inferQueryOutput, trpc } from "../utils/trpc";
 
 const { TabPane } = Tabs;
 
 type GameImages = string[];
-
-type GameProps = {
-  summaryImages: GameImages;
-  mediaImages: GameImages;
-  description: string;
-};
-
-type GameSubProps = { images: GameImages };
 
 const Game: NextPage = () => {
   const { query } = useRouter();
@@ -33,35 +25,32 @@ const Game: NextPage = () => {
     },
   ]);
 
-  const summaryImages = [
-    "https://image.api.playstation.com/vulcan/ap/rnd/202101/2921/x64hEmgvhgxpXc9z9hpyLAyQ.jpg",
-    "https://image.api.playstation.com/vulcan/ap/rnd/202101/2921/DwVjpbKOsFOyPdNzmSTSWuxG.png",
-  ];
-
-  const mediaImages = [
-    "https://image.api.playstation.com/vulcan/ap/rnd/202102/1018/OAa4x7rhbLR89HfMjmNEbHFV.jpg",
-    "https://image.api.playstation.com/vulcan/ap/rnd/202102/1018/TkYnDhTj8AVVeMttwkWe2nWX.jpg",
-    "https://image.api.playstation.com/vulcan/ap/rnd/202006/1217/ClnHKlWvqhcJvHd3OsiXHuRc.jpg",
-    "https://image.api.playstation.com/vulcan/ap/rnd/202006/1217/uhyIltavTLwMyE42Ge3ZAJci.jpg",
-    "https://image.api.playstation.com/vulcan/ap/rnd/202006/1217/w6kvRtcc2994kgRrUq4QAcrz.jpg",
-    "https://image.api.playstation.com/vulcan/ap/rnd/202006/1217/JK8l3yPGClCmQXjjkjOdAoHB.jpg",
-  ];
-
-  const description =
-    "BLAST YOUR WAY THROUGH AN INTERDIMENSIONAL ADVENTURE<br /><br />Ratchet and Clank are back! Help them stop a robotic emperor intent on conquering cross-dimensional worlds, with their own universe next in the firing line. Witness the evolution of the dream team as they're joined by Rivet – a Lombax resistance fighter from another dimension.<br /><br />- Blast your way home with an arsenal of outrageous weaponry. <br />- Experience the shuffle of dimensional rifts and dynamic gameplay. <br />- Explore never-before-seen planets and alternate dimension versions of old favorites.<br /><br />PS5 FEATURES: <br />- Feel in-game actions through the haptic feedback of the DualSense wireless controller. <br />- Take full control of advanced weapon mechanics, made possible by adaptive triggers. <br />- Planet-hop at hyper-speed via the near-instant loading of the PS5 console's SSD. <br />- Immerse your ears with Tempest 3D AudioTech* as you work to save the universe. <br />- Enhanced lighting and ray tracing render dazzling in-game worlds – displayed in crisp, dynamic 4K and HDR**. <br />- Choose Performance Mode to enjoy targeted 60 frames per second gameplay***.";
-
   if (isLoading) {
-    <div className="flex items-center justify-center">
-      <Spin size="large" />
-    </div>;
+    return (
+      <div className="flex items-center justify-center">
+        <Spin size="large" />
+      </div>
+    );
   }
+
+  const summaryImages: [string, string] = [
+    data?.info?.coverUrl!,
+    data?.info?.iconUrl!,
+  ];
 
   return (
     <>
-      <GameSummary images={summaryImages} />
+      <GameSummary
+        images={summaryImages}
+        name={data?.info?.name!}
+        platforms={data?.info?.platforms!}
+      />
       <Tabs className="px-8" defaultActiveKey="1">
         <TabPane tab="Details" key="1">
-          <GameDetails images={mediaImages} description={description} />
+          <GameDetails
+            images={data?.info?.screenshots!}
+            description={data?.info?.description!}
+          />
         </TabPane>
         <TabPane tab="Trophies" key="2">
           {data?.trophies?.map((trophy, index) => (
@@ -77,14 +66,18 @@ const Game: NextPage = () => {
 
 export default Game;
 
-const GameSummary: React.FC<GameSubProps> = ({ images }) => {
+const GameSummary: React.FC<{
+  images: [string, string];
+  name: string;
+  platforms: GamePlatforms[];
+}> = ({ images, name, platforms }) => {
   const [cover, icon] = images;
 
   return (
     <>
       <div className="w-full h-[50vh] relative">
         <Image
-          src={cover!}
+          src={cover}
           layout="fill"
           objectFit="cover"
           objectPosition="right 33%"
@@ -97,23 +90,26 @@ const GameSummary: React.FC<GameSubProps> = ({ images }) => {
         <div className="h-[200px] w-[200px] -mt-20 mr-12 relative">
           <Image
             className="rounded-[32px]"
-            src={icon!}
+            src={icon}
             layout="fill"
             alt="Game Icon Image"
           />
         </div>
 
         <div className="flex flex-col">
-          <div className="text-4xl mb-6">Ratchet &amp; Clank: Rift Apart</div>
+          <div className="text-4xl mb-6">{name}</div>
 
           <div className="flex">
-            <div className={`badge badge--platform ${styles.platformBadge}`}>
-              PS4
-            </div>
-
-            <div className={`badge badge--platform ${styles.platformBadge}`}>
-              PS5
-            </div>
+            {platforms?.map((platform, index) => {
+              return (
+                <div
+                  key={index}
+                  className={`badge badge--platform ${styles.platformBadge}`}
+                >
+                  {platform}
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -121,11 +117,11 @@ const GameSummary: React.FC<GameSubProps> = ({ images }) => {
   );
 };
 
-const GameDetails: React.FC<GameSubProps & { description: string }> = ({
+const GameDetails: React.FC<{ images: GameImages; description: string }> = ({
   images,
   description,
 }) => {
-  const items: ReactImageGalleryItem[] = images.map((image) => {
+  const items: ReactImageGalleryItem[] = images?.map((image) => {
     return {
       original: image,
       thumbnail: image,
@@ -163,7 +159,7 @@ const GameDetails: React.FC<GameSubProps & { description: string }> = ({
 };
 
 const TrophyCard: React.FC<{
-  trophy: ArrayElement<NonNullable<inferQueryOutput<"game">["trophies"]>>;
+  trophy: ArrayElement<inferQueryOutput<"game">["trophies"]>;
 }> = ({
   trophy: {
     name,
@@ -222,7 +218,7 @@ const TrophyCard: React.FC<{
         </div>
 
         <div
-          className={`${styles.metadata} ${styles.trophyType} w-28 h-28 relative`}
+          className={`${styles.metadata} ${styles.trophyType} w-28 h-28 relative flex-shrink-0`}
         >
           <Image src={`/${type}.png`} layout="fill" alt={`${type} trophy`} />
         </div>

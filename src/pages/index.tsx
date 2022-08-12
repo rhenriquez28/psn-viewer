@@ -1,4 +1,3 @@
-//import { createSSGHelpers } from "@trpc/react/ssg";
 import { Spin } from "antd";
 import classnames from "classnames";
 import type { NextPage } from "next";
@@ -7,27 +6,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { TrophyCounts, TrophyType } from "psn-api";
 import TrophyIcon from "../components/TrophyIcon";
-//import { appRouter } from "../server/router";
-//import { createContext } from "../server/router/context";
 import styles from "../styles/index.module.scss";
 import { ArrayElement } from "../types";
 import { inferQueryOutput, trpc } from "../utils/trpc";
-
-/*export async function getServerSideProps() {
-  const ssg = createSSGHelpers({
-    router: appRouter,
-    ctx: await createContext(),
-  });
-
-  await ssg.fetchQuery("dashboard");
-
-  return {
-    props: {
-      trpcState: ssg.dehydrate(),
-      revalidate: 1,
-    },
-  };
-}*/
 
 const Home: NextPage = () => {
   const { data, isLoading } = trpc.useQuery(["dashboard"], {
@@ -49,11 +30,11 @@ const Home: NextPage = () => {
       <button onClick={() => signIn()}>Sign in</button>
       <button onClick={() => signOut()}>Sign out</button>
 
-      <ProfileSummary className="mb-4 max-w-xl" profile={data?.profile} />
+      <ProfileSummary className="mb-4 max-w-xl" profile={data!.profile} />
 
       <div>My Games</div>
 
-      {data?.games?.map((game, index) => {
+      {data!.games.map((game, index) => {
         return <GameCard key={index} className="mb-2 max-w-2xl" game={game} />;
       })}
     </div>
@@ -137,7 +118,7 @@ const TrophyCounter: React.FC<{
 
 const GameCard: React.FC<{
   className?: string;
-  game: ArrayElement<NonNullable<inferQueryOutput<"dashboard">["games"]>>;
+  game: ArrayElement<inferQueryOutput<"dashboard">["games"]>;
 }> = ({ className, game }) => {
   const isPS5 = game.platforms.includes("PS5");
 

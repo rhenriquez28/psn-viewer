@@ -1,23 +1,7 @@
 // src/utils/trpc.ts
 import { createReactQueryHooks } from "@trpc/react";
 import type { inferProcedureInput, inferProcedureOutput } from "@trpc/server";
-import { NextPageContext } from "next";
 import type { AppRouter } from "../server/router";
-
-/**
- * Extend `NextPageContext` with meta data that can be picked up by `responseMeta()` when server-side rendering
- */
-export interface SSRContext extends NextPageContext {
-  /**
-   * Set HTTP Status code
-   * @usage
-   * const utils = trpc.useContext();
-   * if (utils.ssrContext) {
-   *   utils.ssrContext.status = 404;
-   * }
-   */
-  status?: number;
-}
 
 export const trpc = createReactQueryHooks<AppRouter>();
 
@@ -40,3 +24,20 @@ export type inferMutationOutput<
 export type inferMutationInput<
   TRouteKey extends keyof AppRouter["_def"]["mutations"]
 > = inferProcedureInput<AppRouter["_def"]["mutations"][TRouteKey]>;
+
+export function omit<
+  TObj extends Record<string, unknown>,
+  TKey extends keyof TObj
+>(obj: TObj, ...keys: TKey[] | [TKey[]]): Omit<TObj, TKey> {
+  const actualKeys: string[] = Array.isArray(keys[0])
+    ? (keys[0] as string[])
+    : (keys as string[]);
+
+  const newObj: any = Object.create(null);
+  for (const key in obj) {
+    if (!actualKeys.includes(key)) {
+      newObj[key] = obj[key];
+    }
+  }
+  return newObj;
+}

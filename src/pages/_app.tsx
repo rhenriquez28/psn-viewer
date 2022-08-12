@@ -6,7 +6,7 @@ import superjson from "superjson";
 import Layout from "../components/Layout";
 import type { AppRouter } from "../server/router";
 import "../styles/globals.css";
-import { omit } from "../utils/omit";
+import { omit } from "../utils/trpc";
 
 const MyApp: AppType = ({
   Component,

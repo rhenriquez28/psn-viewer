@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE `Game` MODIFY `ps4Size` BIGINT NULL,
+    MODIFY `ps5Size` BIGINT NULL;

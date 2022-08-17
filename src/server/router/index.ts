@@ -10,12 +10,13 @@ import {
   getUserTrophyProfileSummary,
   TitleThinTrophy,
   Trophy,
+  TrophyCounts,
   TrophyRarity,
   UserThinTrophy,
 } from "psn-api";
 import superjson from "superjson";
 import { z } from "zod";
-import { GameGenres, GamePlatforms } from "../../types";
+import { Game, GameGenres, GamePlatforms } from "../../types";
 import { createProtectedRouter } from "./protected-router";
 
 export const appRouter = createProtectedRouter()
@@ -39,18 +40,36 @@ export const appRouter = createProtectedRouter()
           title.trophyTitlePlatform.includes("PS5")
       );
 
+      const earnedTrophiesKeys = Object.keys(trophySummaryResp.earnedTrophies);
+
+      const trophyTotal = earnedTrophiesKeys.reduce(
+        (previousValue, _, index) => {
+          return (
+            previousValue +
+            trophySummaryResp.earnedTrophies[
+              earnedTrophiesKeys[index] as keyof TrophyCounts
+            ]
+          );
+        },
+        0
+      );
+
       return {
         profile: {
           username: userProfileResp.onlineId,
           avatar: userProfileResp.avatars[2]?.url,
           isPlus: userProfileResp.isPlus,
-          trophySummary: trophySummaryResp.earnedTrophies,
+          earnedTrophies: trophySummaryResp.earnedTrophies,
+          trophyLevel: Number(trophySummaryResp.trophyLevel),
+          progress: trophySummaryResp.progress,
+          trophyTotal,
         },
         games: currentUserTitles.map((title) => ({
           name: title.trophyTitleName,
           iconUrl: title.trophyTitleIconUrl,
           platforms: title.trophyTitlePlatform.split(","),
-          trophies: title.definedTrophies,
+          earnedTrophies: title.earnedTrophies,
+          progress: title.progress,
           npCommunicationId: title.npCommunicationId,
         })),
       };
@@ -371,26 +390,6 @@ type PlatPricesAPIResponse = {
   errorDesc: string;
   apiLimit: string;
   apiUsage: string;
-};
-
-type Game = {
-  npCommunicationId: string;
-  titleId: string;
-  name: string;
-  genres: GameGenres[];
-  description: string;
-  iconUrl: string;
-  coverUrl: string;
-  screenshots: string[];
-  previewVideoUrl: string | null;
-  publisher: string;
-  developer: string | null;
-  platforms: GamePlatforms[];
-  psStoreUrl: string;
-  platPricesUrl: string;
-  rating: string | null;
-  ps4Size: bigint | null;
-  ps5Size: bigint | null;
 };
 
 // export type definition of API

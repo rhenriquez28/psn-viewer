@@ -10,7 +10,7 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
-    session({ session, token }) {
+    async session({ session, token }) {
       if (token) {
         session.authorization = token.authorization;
         session.authPayload = { accessToken: token.authorization.accessToken };

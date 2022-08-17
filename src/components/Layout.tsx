@@ -1,9 +1,11 @@
+import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { status } = useSession();
   return (
     <div className="flex flex-col h-screen justify-between">
-      <Navbar />
+      <Navbar status={status} />
       <main>{children}</main>
       <Footer />
     </div>
@@ -12,13 +14,22 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
 export default Layout;
 
-const Navbar = () => {
+const Navbar: React.FC<{
+  status: "authenticated" | "loading" | "unauthenticated";
+}> = ({ status }) => {
   return (
     <div className="py-4 px-8 flex justify-between items-center w-full top-0 bg-gray-800 text-zinc-300 shadow-md">
       <Link href={"/"}>
         <div className="font-normal text-2xl cursor-pointer">PSN Viewer</div>
       </Link>
-      <div className="w-28">social share placeholder</div>
+      <div className="flex">
+        <div className="w-28">social share placeholder</div>
+        {status === "authenticated" ? (
+          <button className="ml-2" onClick={() => signOut()}>
+            Sign Out
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 };

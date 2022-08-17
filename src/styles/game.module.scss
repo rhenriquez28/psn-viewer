@@ -5,14 +5,14 @@
 }
 
 .metadataCell {
-    @apply flex justify-center;
+    @apply flex;
 
     &Label {
-        @apply text-zinc-200 font-bold;
+        @apply text-zinc-200 font-bold min-w-fit;
     }
 
     &Data {
-        @apply ml-2;
+        @apply ml-2 overflow-hidden whitespace-nowrap text-ellipsis;
     }
 }
 

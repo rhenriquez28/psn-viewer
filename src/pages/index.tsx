@@ -1,4 +1,4 @@
-import { Spin } from "antd";
+import { Progress, Spin } from "antd";
 import classnames from "classnames";
 import type { NextPage } from "next";
 import { signIn, signOut } from "next-auth/react";
@@ -11,17 +11,33 @@ import { ArrayElement } from "../types";
 import { inferQueryOutput, trpc } from "../utils/trpc";
 
 const Home: NextPage = () => {
-  const { data, isLoading } = trpc.useQuery(["dashboard"], {
+  const { data, isLoading, error } = trpc.useQuery(["dashboard"], {
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center">
-        <button onClick={() => signIn()}>Sign in</button>
-        <button onClick={() => signOut()}>Sign out</button>
         <Spin size="large" />
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <>
+        <button
+          onClick={() =>
+            signIn("credentials", {
+              npsso:
+                "ookc3hAUJiTccc6MaYAfGcQzV6cHBQjzNM4xwJtnwPRbBeaf0F9H5ESFH4zT0kZs",
+            })
+          }
+        >
+          Sign in
+        </button>
+      </>
     );
   }
 
@@ -34,9 +50,13 @@ const Home: NextPage = () => {
 
       <div>My Games</div>
 
-      {data!.games.map((game, index) => {
-        return <GameCard key={index} className="mb-2 max-w-2xl" game={game} />;
-      })}
+      <div className="grid grid-cols-2 justify-center items-center gap-x-3">
+        {data!.games.map((game, index) => {
+          return (
+            <GameCard key={index} className="mb-2 max-w-2xl" game={game} />
+          );
+        })}
+      </div>
     </div>
   );
 };
@@ -47,48 +67,101 @@ const ProfileSummary: React.FC<{
   className?: string;
   profile: inferQueryOutput<"dashboard">["profile"];
 }> = ({ className, profile }) => {
+  const trophyLevelRange = findTrophyLevelRange(profile.trophyLevel);
+
   return (
     <div className={`p-4 w-full h-fit shadow-md ${className}`}>
-      <div className="flex items-center">
-        <div
-          className={`w-28 h-28 relative ${
-            profile?.isPlus ? styles.psPlus : ""
-          }`}
-        >
-          <Image
-            src={profile?.avatar ?? ""}
-            layout="fill"
-            className="rounded-full"
-            priority={true}
-            alt="profile avatar"
-          />
+      <div className="flex justify-between">
+        <div className="flex items-center">
+          <div
+            className={`w-28 h-28 relative ${
+              profile?.isPlus ? styles.psPlus : ""
+            }`}
+          >
+            <Image
+              src={profile?.avatar ?? ""}
+              layout="fill"
+              className="rounded-full"
+              priority={true}
+              alt="profile avatar"
+            />
+          </div>
+
+          <div className="text-lg text-black ml-3">{profile?.username}</div>
         </div>
 
-        <div className="text-lg text-black ml-3">{profile?.username}</div>
+        <div className="flex justify-center">
+          {profile?.earnedTrophies
+            ? Object.keys(profile.earnedTrophies)
+                .map((trophyType, index) => {
+                  return (
+                    <TrophyCounter
+                      key={index}
+                      className={styles.trophyCounter}
+                      type={trophyType as TrophyType}
+                      count={
+                        profile.earnedTrophies[
+                          trophyType as keyof TrophyCounts
+                        ]!
+                      }
+                    />
+                  );
+                })
+                .reverse()
+            : null}
+        </div>
       </div>
 
-      <div className="text-md text-black my-4">Trophy Summary</div>
+      <div className="flex justify-around items-center mt-5">
+        <div className="flex flex-col items-center">
+          <div className="relative w-20 h-20">
+            <Image
+              src={`/trophy-level-${trophyLevelRange}.webp`}
+              layout="fill"
+              alt="Trophy Level Icon"
+            />
+          </div>
 
-      <div className="flex justify-center">
-        {profile?.trophySummary
-          ? Object.keys(profile.trophySummary)
-              .map((trophyType, index) => {
-                return (
-                  <TrophyCounter
-                    key={index}
-                    className={styles.trophyCounter}
-                    type={trophyType as TrophyType}
-                    count={
-                      profile.trophySummary[trophyType as keyof TrophyCounts]!
-                    }
-                  />
-                );
-              })
-              .reverse()
-          : null}
+          <div className="mt-2">Level {profile.trophyLevel}</div>
+        </div>
+
+        <Progress
+          type="circle"
+          percent={profile.progress}
+          strokeColor="black"
+          width={80}
+        />
+
+        <div className="flex flex-col items-center">
+          <div className="text-3xl">{profile.trophyTotal}</div>
+          <div>Total Trophies</div>
+        </div>
       </div>
     </div>
   );
+};
+
+const findTrophyLevelRange = (level: number) => {
+  if (level >= 1 && level <= 99) {
+    return "1-99";
+  } else if (level >= 100 && level <= 199) {
+    return "100-199";
+  } else if (level >= 200 && level <= 299) {
+    return "200-299";
+  } else if (level >= 300 && level <= 399) {
+    return "300-399";
+  } else if (level >= 400 && level <= 499) {
+    return "400-499";
+  } else if (level >= 500 && level <= 599) {
+    return "500-599";
+  } else if (level >= 600 && level <= 699) {
+    return "600-699";
+  } else if (level >= 700 && level <= 799) {
+    return "700-799";
+  } else if (level >= 800 && level <= 998) {
+    return "800-998";
+  }
+  return "999";
 };
 
 const TrophyCounter: React.FC<{
@@ -154,19 +227,31 @@ const GameCard: React.FC<{
           </div>
         </div>
 
-        <div className="flex">
-          {Object.keys(game.trophies)
-            .map((trophyType, index) => {
-              return (
-                <TrophyCounter
-                  key={index}
-                  className={styles.trophyCounter}
-                  type={trophyType as TrophyType}
-                  count={game.trophies[trophyType as keyof TrophyCounts]!}
-                />
-              );
-            })
-            .reverse()}
+        <div className="flex flex-col w-52">
+          <div className="flex self-end mb-2">
+            {Object.keys(game.earnedTrophies)
+              .map((trophyType, index) => {
+                return (
+                  <TrophyCounter
+                    key={index}
+                    className={styles.trophyCounter}
+                    type={trophyType as TrophyType}
+                    count={
+                      game.earnedTrophies[trophyType as keyof TrophyCounts]!
+                    }
+                  />
+                );
+              })
+              .reverse()}
+          </div>
+
+          <Progress
+            type="line"
+            size="small"
+            strokeColor="black"
+            percent={game.progress}
+            status="normal"
+          />
         </div>
       </div>
     </Link>

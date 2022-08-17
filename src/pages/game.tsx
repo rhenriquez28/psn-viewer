@@ -6,12 +6,25 @@ import { useRouter } from "next/router";
 import React from "react";
 import ImageGallery, { ReactImageGalleryItem } from "react-image-gallery";
 import styles from "../styles/game.module.scss";
-import { ArrayElement, GamePlatforms } from "../types";
+import { ArrayElement, Game, GamePlatforms } from "../types";
 import { inferQueryOutput, trpc } from "../utils/trpc";
 
 const { TabPane } = Tabs;
 
 type GameImages = string[];
+
+type GameMetadata = Pick<
+  Game,
+  | "publisher"
+  | "developer"
+  | "platforms"
+  | "genres"
+  | "platPricesUrl"
+  | "psStoreUrl"
+  | "ps4Size"
+  | "ps5Size"
+  | "rating"
+>;
 
 const Game: NextPage = () => {
   const { query } = useRouter();
@@ -38,6 +51,28 @@ const Game: NextPage = () => {
     data?.info?.iconUrl!,
   ];
 
+  const metadata = (({
+    platforms,
+    genres,
+    publisher,
+    developer,
+    rating,
+    ps4Size,
+    ps5Size,
+    platPricesUrl,
+    psStoreUrl,
+  }) => ({
+    platforms,
+    genres,
+    publisher,
+    developer,
+    rating,
+    ps4Size,
+    ps5Size,
+    platPricesUrl,
+    psStoreUrl,
+  }))(data?.info!);
+
   return (
     <>
       <GameSummary
@@ -50,6 +85,7 @@ const Game: NextPage = () => {
           <GameDetails
             images={data?.info?.screenshots!}
             description={data?.info?.description!}
+            metadata={metadata}
           />
         </TabPane>
         <TabPane tab="Trophies" key="2">
@@ -117,10 +153,11 @@ const GameSummary: React.FC<{
   );
 };
 
-const GameDetails: React.FC<{ images: GameImages; description: string }> = ({
-  images,
-  description,
-}) => {
+const GameDetails: React.FC<{
+  images: GameImages;
+  description: string;
+  metadata: GameMetadata;
+}> = ({ images, description, metadata }) => {
   const items: ReactImageGalleryItem[] = images?.map((image) => {
     return {
       original: image,
@@ -146,15 +183,59 @@ const GameDetails: React.FC<{ images: GameImages; description: string }> = ({
           dangerouslySetInnerHTML={{ __html: description }}
         />
 
-        <div className="grid grid-flow-col grid-cols-2 justify-center pb-6">
-          <div className={styles.metadataCell}>
-            <div className={styles.metadataCellLabel}>Platforms:</div>
-
-            <div className={styles.metadataCellData}>PS5</div>
-          </div>
+        <div className="grid grid-cols-2 justify-center pb-6 gap-2">
+          {metadata
+            ? Object.keys(metadata).map((key, index) => {
+                return (
+                  <MetadataCell
+                    key={index}
+                    labelKey={key as keyof GameMetadata}
+                    value={metadata[key as keyof GameMetadata]}
+                  />
+                );
+              })
+            : null}
         </div>
       </div>
     </>
+  );
+};
+
+const MetadataCell: React.FC<{
+  labelKey: keyof GameMetadata;
+  value: string | string[] | bigint | null;
+}> = ({ labelKey, value }) => {
+  if (!value) {
+    return null;
+  }
+
+  let data: string;
+
+  if (Array.isArray(value)) {
+    data = value.join(", ");
+  } else if (typeof value === "bigint") {
+    data = `${(Number(value) / Math.pow(1024, 3)).toFixed(2)} GB`;
+  } else {
+    data = value;
+  }
+
+  return (
+    <div className={styles.metadataCell}>
+      <div className={styles.metadataCellLabel}>{labelMap[labelKey]}</div>
+
+      {data.startsWith("http") ? (
+        <a
+          href={data}
+          target="_blank"
+          rel="noreferrer"
+          className={`underline ${styles.metadataCellData}`}
+        >
+          {data}
+        </a>
+      ) : (
+        <div className={styles.metadataCellData}>{data}</div>
+      )}
+    </div>
   );
 };
 
@@ -186,7 +267,7 @@ const TrophyCard: React.FC<{
             { "border-green-500": isEarned }
           )}
         >
-          <Image src={iconUrl} layout="fill" />
+          <Image src={iconUrl} layout="fill" alt="Trophy Icon" />
         </div>
 
         <div className="mx-4 min-w-0">
@@ -240,3 +321,15 @@ const timeEarned = (earnedOn: string) =>
     minute: "numeric",
     second: "numeric",
   }).format(new Date(earnedOn));
+
+const labelMap: Record<keyof GameMetadata, string> = {
+  developer: "Developer:",
+  publisher: "Publisher:",
+  ps4Size: "PS4 Size:",
+  ps5Size: "PS5 Size:",
+  rating: "Rating:",
+  platPricesUrl: "PlatPrices URL:",
+  psStoreUrl: "PS Store URL:",
+  platforms: "Platforms:",
+  genres: "Genres:",
+};

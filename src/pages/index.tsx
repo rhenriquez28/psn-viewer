@@ -1,7 +1,7 @@
 import { Progress, Spin } from "antd";
 import classnames from "classnames";
 import type { NextPage } from "next";
-import { signIn, signOut } from "next-auth/react";
+import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { TrophyCounts, TrophyType } from "psn-api";
@@ -11,12 +11,12 @@ import { ArrayElement } from "../types";
 import { inferQueryOutput, trpc } from "../utils/trpc";
 
 const Home: NextPage = () => {
-  const { data, isLoading, error } = trpc.useQuery(["dashboard"], {
+  const { data, isLoading, error, isIdle } = trpc.useQuery(["user"], {
     refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 
-  if (isLoading) {
+  if (isLoading || isIdle) {
     return (
       <div className="flex items-center justify-center">
         <Spin size="large" />
@@ -43,15 +43,12 @@ const Home: NextPage = () => {
 
   return (
     <div className="p-8 flex flex-col items-center">
-      <button onClick={() => signIn()}>Sign in</button>
-      <button onClick={() => signOut()}>Sign out</button>
-
-      <ProfileSummary className="mb-4 max-w-xl" profile={data!.profile} />
+      <ProfileSummary className="mb-4 max-w-xl" profile={data.profile} />
 
       <div>My Games</div>
 
-      <div className="grid grid-cols-2 justify-center items-center gap-x-3">
-        {data!.games.map((game, index) => {
+      <div className="grid grid-cols-1 lg:grid-cols-2 justify-center items-center gap-x-3">
+        {data.games.map((game, index) => {
           return (
             <GameCard key={index} className="mb-2 max-w-2xl" game={game} />
           );
@@ -65,7 +62,7 @@ export default Home;
 
 const ProfileSummary: React.FC<{
   className?: string;
-  profile: inferQueryOutput<"dashboard">["profile"];
+  profile: inferQueryOutput<"user">["profile"];
 }> = ({ className, profile }) => {
   const trophyLevelRange = findTrophyLevelRange(profile.trophyLevel);
 
@@ -75,11 +72,11 @@ const ProfileSummary: React.FC<{
         <div className="flex items-center">
           <div
             className={`w-28 h-28 relative ${
-              profile?.isPlus ? styles.psPlus : ""
+              profile.isPlus ? styles.psPlus : ""
             }`}
           >
             <Image
-              src={profile?.avatar ?? ""}
+              src={profile.avatar ?? ""}
               layout="fill"
               className="rounded-full"
               priority={true}
@@ -87,11 +84,11 @@ const ProfileSummary: React.FC<{
             />
           </div>
 
-          <div className="text-lg text-black ml-3">{profile?.username}</div>
+          <div className="text-lg text-black ml-3">{profile.username}</div>
         </div>
 
         <div className="flex justify-center">
-          {profile?.earnedTrophies
+          {profile.earnedTrophies
             ? Object.keys(profile.earnedTrophies)
                 .map((trophyType, index) => {
                   return (
@@ -191,13 +188,17 @@ const TrophyCounter: React.FC<{
 
 const GameCard: React.FC<{
   className?: string;
-  game: ArrayElement<inferQueryOutput<"dashboard">["games"]>;
+  game: ArrayElement<inferQueryOutput<"user">["games"]>;
 }> = ({ className, game }) => {
   const isPS5 = game.platforms.includes("PS5");
 
   return (
     <Link
-      href={`/game?name=${game.name}&npCommunicationId=${game.npCommunicationId}&isPS5=${isPS5}`}
+      href={`/game?name=${encodeURIComponent(
+        game.name
+      )}&npCommunicationId=${encodeURIComponent(
+        game.npCommunicationId
+      )}&isPS5=${isPS5}`}
     >
       <div
         className={`p-4 w-full h-fit shadow-md flex items-center justify-between hover:bg-sky-100 hover:cursor-pointer ${className}`}

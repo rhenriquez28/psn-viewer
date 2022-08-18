@@ -9,8 +9,6 @@ import styles from "../styles/game.module.scss";
 import { ArrayElement, Game, GamePlatforms } from "../types";
 import { inferQueryOutput, trpc } from "../utils/trpc";
 
-const { TabPane } = Tabs;
-
 type GameImages = string[];
 
 type GameMetadata = Pick<
@@ -29,7 +27,7 @@ type GameMetadata = Pick<
 const Game: NextPage = () => {
   const { query } = useRouter();
   const { name, npCommunicationId, isPS5 } = query;
-  const { data, isLoading } = trpc.useQuery([
+  const { data, isLoading, isIdle, error } = trpc.useQuery([
     "game",
     {
       name: name as string,
@@ -38,7 +36,7 @@ const Game: NextPage = () => {
     },
   ]);
 
-  if (isLoading) {
+  if (isLoading || isIdle) {
     return (
       <div className="flex items-center justify-center">
         <Spin size="large" />
@@ -46,9 +44,13 @@ const Game: NextPage = () => {
     );
   }
 
+  if (error) {
+    return <div>errorrrr</div>;
+  }
+
   const summaryImages: [string, string] = [
-    data?.info?.coverUrl!,
-    data?.info?.iconUrl!,
+    data.info.coverUrl,
+    data.info.iconUrl,
   ];
 
   const metadata = (({
@@ -71,30 +73,32 @@ const Game: NextPage = () => {
     ps5Size,
     platPricesUrl,
     psStoreUrl,
-  }))(data?.info!);
+  }))(data.info);
 
   return (
     <>
       <GameSummary
         images={summaryImages}
-        name={data?.info?.name!}
-        platforms={data?.info?.platforms!}
+        name={data.info.name}
+        platforms={data.info.platforms}
       />
+
       <Tabs className="px-8" defaultActiveKey="1">
-        <TabPane tab="Details" key="1">
+        <Tabs.TabPane tab="Details" key="1">
           <GameDetails
-            images={data?.info?.screenshots!}
-            description={data?.info?.description!}
+            images={data.info.screenshots}
+            description={data.info.description}
             metadata={metadata}
           />
-        </TabPane>
-        <TabPane tab="Trophies" key="2">
-          {data?.trophies?.map((trophy, index) => (
-            <div key={index} className="mb-4">
+        </Tabs.TabPane>
+
+        <Tabs.TabPane tab="Trophies" key="2">
+          {data.trophies.map((trophy) => (
+            <div key={trophy.id} className="mb-4">
               <TrophyCard trophy={trophy} />
             </div>
           ))}
-        </TabPane>
+        </Tabs.TabPane>
       </Tabs>
     </>
   );
@@ -136,7 +140,7 @@ const GameSummary: React.FC<{
           <div className="text-4xl mb-6">{name}</div>
 
           <div className="flex">
-            {platforms?.map((platform, index) => {
+            {platforms.map((platform, index) => {
               return (
                 <div
                   key={index}
@@ -158,7 +162,7 @@ const GameDetails: React.FC<{
   description: string;
   metadata: GameMetadata;
 }> = ({ images, description, metadata }) => {
-  const items: ReactImageGalleryItem[] = images?.map((image) => {
+  const items: ReactImageGalleryItem[] = images.map((image) => {
     return {
       original: image,
       thumbnail: image,

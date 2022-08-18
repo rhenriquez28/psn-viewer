@@ -1,5 +1,10 @@
+import { Spin } from "antd";
+import debounce from "lodash.debounce";
 import { signOut, useSession } from "next-auth/react";
+import Image from "next/image";
 import Link from "next/link";
+import { ChangeEvent, useEffect, useState } from "react";
+import { trpc } from "../utils/trpc";
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { status } = useSession();
@@ -17,11 +22,68 @@ export default Layout;
 const Navbar: React.FC<{
   status: "authenticated" | "loading" | "unauthenticated";
 }> = ({ status }) => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const { data, isLoading } = trpc.useQuery(["search", searchQuery], {
+    enabled: !!searchQuery,
+  });
+  const debouncedSetSearchQuery = debounce(
+    (e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value),
+    500
+  );
+
+  useEffect(() => {
+    if (searchQuery && !showSearchResults) {
+      setShowSearchResults(true);
+    }
+  }, [searchQuery]);
+
   return (
     <div className="py-4 px-8 flex justify-between items-center w-full top-0 bg-gray-800 text-zinc-300 shadow-md">
       <Link href={"/"}>
         <div className="font-normal text-2xl cursor-pointer">PSN Viewer</div>
       </Link>
+
+      <div className="relative w-96 h-8 mx-3 text-black">
+        <input
+          placeholder="Search for a user..."
+          className="w-full h-full p-4"
+          type="text"
+          onChange={debouncedSetSearchQuery}
+          onBlur={() => setShowSearchResults(false)}
+        />
+
+        {showSearchResults ? (
+          <div className="absolute top-9 w-full bg-white z-30 h-48 shadow-md rounded-sm overflow-y-scroll">
+            {isLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <Spin size="large" />
+              </div>
+            ) : (
+              data?.results?.map((result) => {
+                return (
+                  <div
+                    key={result.accountId}
+                    className="flex items-center p-3 hover:bg-sky-100 hover:cursor-pointer"
+                  >
+                    <div className="relative h-8 w-8">
+                      <Image
+                        src={result.avatarUrl}
+                        layout="fill"
+                        alt="User Avatar Image"
+                        className="rounded-full"
+                      />
+                    </div>
+
+                    <div className="ml-2">{result.onlineId}</div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        ) : null}
+      </div>
+
       <div className="flex">
         <div className="w-28">social share placeholder</div>
         {status === "authenticated" ? (

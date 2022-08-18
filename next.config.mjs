@@ -18,6 +18,7 @@ export default defineNextConfig({
       "image.api.playstation.com",
       "static-resource.np.community.playstation.net",
       "psnobj.prod.dl.playstation.net",
+      "psn-rsc.prod.dl.playstation.net",
     ],
   },
 });

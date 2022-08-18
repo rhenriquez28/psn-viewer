@@ -5,9 +5,12 @@ import {
   AuthorizationPayload,
   getProfileFromAccountId,
   getTitleTrophies,
+  getUserFriendsAccountIds,
   getUserTitles,
   getUserTrophiesEarnedForTitle,
   getUserTrophyProfileSummary,
+  makeUniversalSearch,
+  SocialAccountResult,
   TitleThinTrophy,
   Trophy,
   TrophyCounts,
@@ -21,7 +24,7 @@ import { createProtectedRouter } from "./protected-router";
 
 export const appRouter = createProtectedRouter()
   .transformer(superjson)
-  .query("dashboard", {
+  .query("user", {
     async resolve({ ctx }) {
       const [trophySummaryResp, userTitlesResp] = await Promise.all([
         getUserTrophyProfileSummary(ctx.session.authPayload, "me"),
@@ -54,6 +57,11 @@ export const appRouter = createProtectedRouter()
         0
       );
 
+      const { friends } = await getUserFriendsAccountIds(
+        ctx.session.authPayload,
+        "me"
+      );
+
       return {
         profile: {
           username: userProfileResp.onlineId,
@@ -72,6 +80,7 @@ export const appRouter = createProtectedRouter()
           progress: title.progress,
           npCommunicationId: title.npCommunicationId,
         })),
+        friends: friends ?? [],
       };
     },
   })
@@ -101,6 +110,27 @@ export const appRouter = createProtectedRouter()
       return {
         info,
         trophies: mergeTrophyLists(titleTrophies, userTitleTrophies),
+      };
+    },
+  })
+  .query("search", {
+    input: z.string(),
+    async resolve({ ctx, input }) {
+      const response = await makeUniversalSearch(
+        ctx.session.authPayload,
+        input,
+        "SocialAllAccounts"
+      );
+      return {
+        results: response.domainResponses[0]?.results?.map(
+          ({ socialMetadata }: SocialAccountResult) => {
+            return {
+              accountId: socialMetadata.accountId,
+              onlineId: socialMetadata.onlineId,
+              avatarUrl: socialMetadata.avatarUrl,
+            };
+          }
+        ),
       };
     },
   });
@@ -154,7 +184,7 @@ const getPlatPricesResponse = async (name: string) => {
   const res = await fetch(
     `https://platprices.com/api.php?key=${
       process.env.PLATPRICES_APIKEY
-    }&name=${name.replace("™", "").replace("®", "")}`
+    }&name=${encodeURIComponent(name.replace("™", "").replace("®", ""))}`
   );
   const response: PlatPricesAPIResponse = await res.json();
   if (response.error !== 0) {
@@ -231,6 +261,7 @@ const mergeTrophyLists = (
     const trophy: Trophy = { ...userTitleTrophy, ...foundTitleTrophy };
 
     return {
+      id: trophy.trophyId,
       name: trophy.trophyName!,
       type: trophy.trophyType,
       iconUrl: trophy.trophyIconUrl!,

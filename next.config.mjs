@@ -21,4 +21,13 @@ export default defineNextConfig({
       "psn-rsc.prod.dl.playstation.net",
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/",
+        destination: "/profile",
+        permanent: true,
+      },
+    ];
+  },
 });

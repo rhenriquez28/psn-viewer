@@ -4,6 +4,7 @@ import type { NextPage } from "next";
 import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/router";
 import { TrophyCounts, TrophyType } from "psn-api";
 import TrophyIcon from "../components/TrophyIcon";
 import styles from "../styles/index.module.scss";
@@ -11,10 +12,16 @@ import { ArrayElement } from "../types";
 import { inferQueryOutput, trpc } from "../utils/trpc";
 
 const Home: NextPage = () => {
-  const { data, isLoading, error, isIdle } = trpc.useQuery(["user"], {
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-  });
+  const { query } = useRouter();
+  const { id } = query;
+  const { data, isLoading, error, isIdle } = trpc.useQuery(
+    ["user", id as string],
+    {
+      retry: false,
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
+    }
+  );
 
   if (isLoading || isIdle) {
     return (
@@ -25,6 +32,13 @@ const Home: NextPage = () => {
   }
 
   if (error) {
+    if (error.data?.code === "FORBIDDEN") {
+      return (
+        <div className="flex items-center justify-center text-3xl">
+          {error.message}
+        </div>
+      );
+    }
     return (
       <>
         <button
@@ -50,7 +64,12 @@ const Home: NextPage = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 justify-center items-center gap-x-3">
         {data.games.map((game, index) => {
           return (
-            <GameCard key={index} className="mb-2 max-w-2xl" game={game} />
+            <GameCard
+              key={index}
+              className="mb-2 max-w-2xl"
+              game={game}
+              userId={id as string}
+            />
           );
         })}
       </div>
@@ -189,7 +208,8 @@ const TrophyCounter: React.FC<{
 const GameCard: React.FC<{
   className?: string;
   game: ArrayElement<inferQueryOutput<"user">["games"]>;
-}> = ({ className, game }) => {
+  userId?: string;
+}> = ({ className, game, userId }) => {
   const isPS5 = game.platforms.includes("PS5");
 
   return (
@@ -198,7 +218,7 @@ const GameCard: React.FC<{
         game.name
       )}&npCommunicationId=${encodeURIComponent(
         game.npCommunicationId
-      )}&isPS5=${isPS5}`}
+      )}&isPS5=${isPS5}${userId ? `&userId=${userId}` : ""}`}
     >
       <div
         className={`p-4 w-full h-fit shadow-md flex items-center justify-between hover:bg-sky-100 hover:cursor-pointer ${className}`}

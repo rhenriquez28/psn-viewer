@@ -31,6 +31,10 @@ const Navbar: React.FC<{
     (e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value),
     500
   );
+  const debouncedSetShowSearchResults = debounce(
+    (value: boolean) => setShowSearchResults(value),
+    200
+  );
 
   useEffect(() => {
     if (searchQuery && !showSearchResults) {
@@ -50,7 +54,7 @@ const Navbar: React.FC<{
           className="w-full h-full p-4"
           type="text"
           onChange={debouncedSetSearchQuery}
-          onBlur={() => setShowSearchResults(false)}
+          onBlur={() => debouncedSetShowSearchResults(false)}
         />
 
         {showSearchResults ? (
@@ -60,23 +64,22 @@ const Navbar: React.FC<{
                 <Spin size="large" />
               </div>
             ) : (
-              data?.results?.map((result) => {
+              data?.results?.map(({ accountId, avatarUrl, onlineId }) => {
                 return (
-                  <div
-                    key={result.accountId}
-                    className="flex items-center p-3 hover:bg-sky-100 hover:cursor-pointer"
-                  >
-                    <div className="relative h-8 w-8">
-                      <Image
-                        src={result.avatarUrl}
-                        layout="fill"
-                        alt="User Avatar Image"
-                        className="rounded-full"
-                      />
-                    </div>
+                  <Link href={`/?id=${accountId}`} key={accountId}>
+                    <div className="flex items-center p-3 hover:bg-sky-100 hover:cursor-pointer">
+                      <div className="relative h-8 w-8">
+                        <Image
+                          src={avatarUrl}
+                          layout="fill"
+                          alt="User Avatar Image"
+                          className="rounded-full"
+                        />
+                      </div>
 
-                    <div className="ml-2">{result.onlineId}</div>
-                  </div>
+                      <div className="ml-2">{onlineId}</div>
+                    </div>
+                  </Link>
                 );
               })
             )}

@@ -26,15 +26,19 @@ type GameMetadata = Pick<
 
 const Game: NextPage = () => {
   const { query } = useRouter();
-  const { name, npCommunicationId, isPS5 } = query;
-  const { data, isLoading, isIdle, error } = trpc.useQuery([
-    "game",
-    {
-      name: name as string,
-      npCommunicationId: npCommunicationId as string,
-      isPS5: isPS5 === "true",
-    },
-  ]);
+  const { name, npCommunicationId, isPS5, userId } = query;
+  const { data, isLoading, isIdle, error } = trpc.useQuery(
+    [
+      "game",
+      {
+        name: name as string,
+        npCommunicationId: npCommunicationId as string,
+        isPS5: isPS5 === "true",
+        userId: userId as string,
+      },
+    ],
+    { refetchOnWindowFocus: false }
+  );
 
   if (isLoading || isIdle) {
     return (

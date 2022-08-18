@@ -1,11 +1,11 @@
 // src/server/router/index.ts
 import { Prisma, PrismaClient } from "@prisma/client";
+import * as trpc from "@trpc/server";
 import {
   AllCallOptions,
   AuthorizationPayload,
   getProfileFromAccountId,
   getTitleTrophies,
-  getUserFriendsAccountIds,
   getUserTitles,
   getUserTrophiesEarnedForTitle,
   getUserTrophyProfileSummary,
@@ -25,63 +25,69 @@ import { createProtectedRouter } from "./protected-router";
 export const appRouter = createProtectedRouter()
   .transformer(superjson)
   .query("user", {
-    async resolve({ ctx }) {
-      const [trophySummaryResp, userTitlesResp] = await Promise.all([
-        getUserTrophyProfileSummary(ctx.session.authPayload, "me"),
-        getUserTitles(ctx.session.authPayload, "me"),
-      ]);
+    input: z.string().optional(),
+    async resolve({ ctx, input }) {
+      try {
+        const [trophySummaryResp, userTitlesResp] = await Promise.all([
+          getUserTrophyProfileSummary(ctx.session.authPayload, input ?? "me"),
+          getUserTitles(ctx.session.authPayload, input ?? "me"),
+        ]);
 
-      const userProfileResp = await getProfileFromAccountId(
-        ctx.session.authPayload,
-        trophySummaryResp.accountId
-      );
+        const userProfileResp = await getProfileFromAccountId(
+          ctx.session.authPayload,
+          trophySummaryResp.accountId
+        );
 
-      // Filtering to only show PS4 and PS5 titles due to PlatPrices API limitation
-      const currentUserTitles = userTitlesResp.trophyTitles.filter(
-        (title) =>
-          title.trophyTitlePlatform.includes("PS4") ||
-          title.trophyTitlePlatform.includes("PS5")
-      );
+        // Filtering to only show PS4 and PS5 titles due to PlatPrices API limitation
+        const currentUserTitles = userTitlesResp.trophyTitles.filter(
+          (title) =>
+            title.trophyTitlePlatform.includes("PS4") ||
+            title.trophyTitlePlatform.includes("PS5")
+        );
 
-      const earnedTrophiesKeys = Object.keys(trophySummaryResp.earnedTrophies);
+        const earnedTrophiesKeys = Object.keys(
+          trophySummaryResp.earnedTrophies
+        );
 
-      const trophyTotal = earnedTrophiesKeys.reduce(
-        (previousValue, _, index) => {
-          return (
-            previousValue +
-            trophySummaryResp.earnedTrophies[
-              earnedTrophiesKeys[index] as keyof TrophyCounts
-            ]
-          );
-        },
-        0
-      );
+        const trophyTotal = earnedTrophiesKeys.reduce(
+          (previousValue, _, index) => {
+            return (
+              previousValue +
+              trophySummaryResp.earnedTrophies[
+                earnedTrophiesKeys[index] as keyof TrophyCounts
+              ]
+            );
+          },
+          0
+        );
 
-      const { friends } = await getUserFriendsAccountIds(
-        ctx.session.authPayload,
-        "me"
-      );
-
-      return {
-        profile: {
-          username: userProfileResp.onlineId,
-          avatar: userProfileResp.avatars[2]?.url,
-          isPlus: userProfileResp.isPlus,
-          earnedTrophies: trophySummaryResp.earnedTrophies,
-          trophyLevel: Number(trophySummaryResp.trophyLevel),
-          progress: trophySummaryResp.progress,
-          trophyTotal,
-        },
-        games: currentUserTitles.map((title) => ({
-          name: title.trophyTitleName,
-          iconUrl: title.trophyTitleIconUrl,
-          platforms: title.trophyTitlePlatform.split(","),
-          earnedTrophies: title.earnedTrophies,
-          progress: title.progress,
-          npCommunicationId: title.npCommunicationId,
-        })),
-        friends: friends ?? [],
-      };
+        return {
+          profile: {
+            username: userProfileResp.onlineId,
+            avatar: userProfileResp.avatars[2]?.url,
+            isPlus: userProfileResp.isPlus,
+            earnedTrophies: trophySummaryResp.earnedTrophies,
+            trophyLevel: Number(trophySummaryResp.trophyLevel),
+            progress: trophySummaryResp.progress,
+            trophyTotal,
+          },
+          games: currentUserTitles.map((title) => ({
+            name: title.trophyTitleName,
+            iconUrl: title.trophyTitleIconUrl,
+            platforms: title.trophyTitlePlatform.split(","),
+            earnedTrophies: title.earnedTrophies,
+            progress: title.progress,
+            npCommunicationId: title.npCommunicationId,
+          })),
+        };
+      } catch (error) {
+        console.log("hereee errorr", error);
+        throw new trpc.TRPCError({
+          code: "FORBIDDEN",
+          message:
+            "This user doesn't allow for their information to be accessed. We're sorry :(",
+        });
+      }
     },
   })
   .query("game", {
@@ -89,6 +95,7 @@ export const appRouter = createProtectedRouter()
       name: z.string(),
       npCommunicationId: z.string(),
       isPS5: z.boolean(),
+      userId: z.string().optional(),
     }),
     async resolve({ ctx, input }) {
       const options: TrophyCallOptions = {
@@ -96,8 +103,7 @@ export const appRouter = createProtectedRouter()
       };
 
       const [titleTrophies, userTitleTrophies] = await fetchTrophyLists(
-        ctx.session.authPayload,
-        input.npCommunicationId,
+        { authPayload: ctx.session.authPayload, ...input },
         options
       );
 
@@ -140,7 +146,9 @@ const getGameInfo = async (
   prisma: PrismaClient,
   name: string
 ) => {
-  const prismaGame = await getGameFromPrisma(prisma, npCommunicationId);
+  name = name.replace("™", "").replace("®", "");
+  const prismaGame = await getGameFromPrisma(prisma, npCommunicationId, name);
+  console.log(prismaGame);
   if (prismaGame) {
     return fromPrismaToGame(prismaGame);
   }
@@ -166,7 +174,8 @@ const getGameInfo = async (
 
 const getGameFromPrisma = async (
   prisma: PrismaClient,
-  npCommunicationId: string
+  npCommunicationId: string,
+  name: string
 ) => {
   return await prisma.game.findFirst({
     include: {
@@ -174,7 +183,9 @@ const getGameFromPrisma = async (
       platforms: { select: { name: true } },
       genres: { select: { name: true } },
     },
-    where: { npCommunicationId },
+    where: {
+      OR: [{ npCommunicationId }, { name }],
+    },
   });
 };
 
@@ -184,7 +195,7 @@ const getPlatPricesResponse = async (name: string) => {
   const res = await fetch(
     `https://platprices.com/api.php?key=${
       process.env.PLATPRICES_APIKEY
-    }&name=${encodeURIComponent(name.replace("™", "").replace("®", ""))}`
+    }&name=${encodeURIComponent(name)}`
   );
   const response: PlatPricesAPIResponse = await res.json();
   if (response.error !== 0) {
@@ -231,8 +242,15 @@ const transformGameInfo = (
 };
 
 const fetchTrophyLists = async (
-  authPayload: AuthorizationPayload,
-  npCommunicationId: string,
+  {
+    authPayload,
+    npCommunicationId,
+    userId,
+  }: {
+    authPayload: AuthorizationPayload;
+    npCommunicationId: string;
+    userId?: string;
+  },
   options: TrophyCallOptions
 ): Promise<[TitleThinTrophy[], UserThinTrophy[]]> => {
   const [{ trophies: titleTrophies }, { trophies: userTitleTrophies }] =
@@ -240,7 +258,7 @@ const fetchTrophyLists = async (
       getTitleTrophies(authPayload, npCommunicationId, "all", options),
       getUserTrophiesEarnedForTitle(
         authPayload,
-        "me",
+        userId ?? "me",
         npCommunicationId,
         "all",
         options

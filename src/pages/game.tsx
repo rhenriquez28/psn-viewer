@@ -9,21 +9,6 @@ import styles from "../styles/game.module.scss";
 import { ArrayElement, Game, GamePlatforms } from "../types";
 import { inferQueryOutput, trpc } from "../utils/trpc";
 
-type GameImages = string[];
-
-type GameMetadata = Pick<
-  Game,
-  | "publisher"
-  | "developer"
-  | "platforms"
-  | "genres"
-  | "platPricesUrl"
-  | "psStoreUrl"
-  | "ps4Size"
-  | "ps5Size"
-  | "rating"
->;
-
 const Game: NextPage = () => {
   const { query } = useRouter();
   const { name, npCommunicationId, isPS5, userId } = query;
@@ -265,7 +250,7 @@ const TrophyCard: React.FC<{
     <div
       className={classNames(
         "p-4 w-full h-fit shadow-lg flex items-center justify-between hover:bg-sky-100",
-        { [styles.earned!]: isEarned }
+        { "bg-green-100 hover:bg-green-200": isEarned }
       )}
     >
       <div className="flex items-center min-w-0">
@@ -341,3 +326,18 @@ const labelMap: Record<keyof GameMetadata, string> = {
   platforms: "Platforms:",
   genres: "Genres:",
 };
+
+type GameImages = string[];
+
+type GameMetadata = Pick<
+  Game,
+  | "publisher"
+  | "developer"
+  | "platforms"
+  | "genres"
+  | "platPricesUrl"
+  | "psStoreUrl"
+  | "ps4Size"
+  | "ps5Size"
+  | "rating"
+>;

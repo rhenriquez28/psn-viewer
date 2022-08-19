@@ -146,12 +146,16 @@ const getGameInfo = async (
   prisma: PrismaClient,
   name: string
 ) => {
-  name = name.replace("™", "").replace("®", "");
+  //Sanitizing name
+  name = name
+    .replaceAll("™", "")
+    .replaceAll("®", "")
+    .replaceAll("Trophies", "");
   const prismaGame = await getGameFromPrisma(prisma, npCommunicationId, name);
-  console.log(prismaGame);
   if (prismaGame) {
     return fromPrismaToGame(prismaGame);
   }
+
   const response = await getPlatPricesResponse(name);
   const game = transformGameInfo(response, npCommunicationId);
   const newPrismaGame = fromGameToPrisma(game);
@@ -192,6 +196,7 @@ const getGameFromPrisma = async (
 type PrismaGame = Prisma.PromiseReturnType<typeof getGameFromPrisma>;
 
 const getPlatPricesResponse = async (name: string) => {
+  console.log(name);
   const res = await fetch(
     `https://platprices.com/api.php?key=${
       process.env.PLATPRICES_APIKEY

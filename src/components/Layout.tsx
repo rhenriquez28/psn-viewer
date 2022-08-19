@@ -48,49 +48,54 @@ const Navbar: React.FC<{
         <div className="font-normal text-2xl cursor-pointer">PSN Viewer</div>
       </Link>
 
-      <div className="relative w-96 h-8 mx-3 text-black">
-        <input
-          placeholder="Search for a user..."
-          className="w-full h-full p-4"
-          type="text"
-          onChange={debouncedSetSearchQuery}
-          onBlur={() => debouncedSetShowSearchResults(false)}
-        />
+      {status === "authenticated" ? (
+        <div className="relative w-96 h-8 mx-3 text-black">
+          <input
+            placeholder="Search for a user..."
+            className="w-full h-full p-4 rounded focus:outline-none focus:shadow-outline"
+            type="text"
+            onChange={debouncedSetSearchQuery}
+            onBlur={() => debouncedSetShowSearchResults(false)}
+          />
 
-        {showSearchResults ? (
-          <div className="absolute top-9 w-full bg-white z-30 h-48 shadow-md rounded-sm overflow-y-scroll">
-            {isLoading ? (
-              <div className="flex items-center justify-center h-full">
-                <Spin size="large" />
-              </div>
-            ) : (
-              data?.results?.map(({ accountId, avatarUrl, onlineId }) => {
-                return (
-                  <Link href={`/?id=${accountId}`} key={accountId}>
-                    <div className="flex items-center p-3 hover:bg-sky-100 hover:cursor-pointer">
-                      <div className="relative h-8 w-8">
-                        <Image
-                          src={avatarUrl}
-                          layout="fill"
-                          alt="User Avatar Image"
-                          className="rounded-full"
-                        />
+          {showSearchResults ? (
+            <div className="absolute top-9 w-full bg-white z-30 h-48 shadow-md rounded-sm overflow-y-scroll">
+              {isLoading ? (
+                <div className="flex items-center justify-center h-full">
+                  <Spin size="large" />
+                </div>
+              ) : (
+                data?.results?.map(({ accountId, avatarUrl, onlineId }) => {
+                  return (
+                    <Link href={`/?id=${accountId}`} key={accountId}>
+                      <div className="flex items-center p-3 hover:bg-sky-100 hover:cursor-pointer">
+                        <div className="relative h-8 w-8">
+                          <Image
+                            src={avatarUrl}
+                            layout="fill"
+                            alt="User Avatar Image"
+                            className="rounded-full"
+                          />
+                        </div>
+
+                        <div className="ml-2">{onlineId}</div>
                       </div>
-
-                      <div className="ml-2">{onlineId}</div>
-                    </div>
-                  </Link>
-                );
-              })
-            )}
-          </div>
-        ) : null}
-      </div>
+                    </Link>
+                  );
+                })
+              )}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       <div className="flex">
         <div className="w-28">social share placeholder</div>
         {status === "authenticated" ? (
-          <button className="ml-2" onClick={() => signOut()}>
+          <button
+            className="ml-2"
+            onClick={() => signOut({ callbackUrl: "/welcome" })}
+          >
             Sign Out
           </button>
         ) : null}

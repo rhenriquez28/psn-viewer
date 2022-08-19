@@ -1,7 +1,6 @@
 import { Progress, Spin } from "antd";
 import classnames from "classnames";
 import type { NextPage } from "next";
-import { signIn } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -12,8 +11,8 @@ import { ArrayElement } from "../types";
 import { inferQueryOutput, trpc } from "../utils/trpc";
 
 const Home: NextPage = () => {
-  const { query } = useRouter();
-  const { id } = query;
+  const router = useRouter();
+  const { id } = router.query;
   const { data, isLoading, error, isIdle } = trpc.useQuery(
     ["user", id as string],
     {
@@ -32,26 +31,22 @@ const Home: NextPage = () => {
   }
 
   if (error) {
-    if (error.data?.code === "FORBIDDEN") {
-      return (
-        <div className="flex items-center justify-center text-3xl">
-          {error.message}
-        </div>
-      );
-    }
     return (
-      <>
+      <div className="flex flex-col items-center justify-center text-3xl">
+        <div>{error.message}</div>
         <button
+          className="action-button mt-2"
           onClick={() =>
-            signIn("credentials", {
-              npsso:
-                "ookc3hAUJiTccc6MaYAfGcQzV6cHBQjzNM4xwJtnwPRbBeaf0F9H5ESFH4zT0kZs",
-            })
+            error.data?.code === "FORBIDDEN"
+              ? router.back()
+              : router.push("/welcome")
           }
         >
-          Sign in
+          {error.data?.code === "FORBIDDEN"
+            ? "Go Back"
+            : "Authenticate yourself!"}
         </button>
-      </>
+      </div>
     );
   }
 

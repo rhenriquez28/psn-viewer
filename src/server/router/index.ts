@@ -81,7 +81,6 @@ export const appRouter = createProtectedRouter()
           })),
         };
       } catch (error) {
-        console.log("hereee errorr", error);
         throw new trpc.TRPCError({
           code: "FORBIDDEN",
           message:
@@ -196,7 +195,6 @@ const getGameFromPrisma = async (
 type PrismaGame = Prisma.PromiseReturnType<typeof getGameFromPrisma>;
 
 const getPlatPricesResponse = async (name: string) => {
-  console.log(name);
   const res = await fetch(
     `https://platprices.com/api.php?key=${
       process.env.PLATPRICES_APIKEY

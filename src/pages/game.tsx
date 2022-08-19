@@ -10,8 +10,8 @@ import { ArrayElement, Game, GamePlatforms } from "../types";
 import { inferQueryOutput, trpc } from "../utils/trpc";
 
 const Game: NextPage = () => {
-  const { query } = useRouter();
-  const { name, npCommunicationId, isPS5, userId } = query;
+  const router = useRouter();
+  const { name, npCommunicationId, isPS5, userId } = router.query;
   const { data, isLoading, isIdle, error } = trpc.useQuery(
     [
       "game",
@@ -34,7 +34,23 @@ const Game: NextPage = () => {
   }
 
   if (error) {
-    return <div>errorrrr</div>;
+    return (
+      <div className="flex flex-col items-center justify-center text-3xl">
+        <div>{error.message}</div>
+        <button
+          className="action-button mt-2"
+          onClick={() =>
+            error.data?.code !== "UNAUTHORIZED"
+              ? router.back()
+              : router.push("/welcome")
+          }
+        >
+          {error.data?.code !== "UNAUTHORIZED"
+            ? "Go Back"
+            : "Authenticate yourself!"}
+        </button>
+      </div>
+    );
   }
 
   const summaryImages: [string, string] = [

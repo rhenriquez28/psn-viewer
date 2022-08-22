@@ -8,6 +8,7 @@ declare module "next-auth" {
   interface Session {
     authorization: AuthTokensResponse;
     authPayload: AuthorizationPayload;
+    accountId: string;
   }
 
   interface User {
@@ -20,5 +21,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     authorization: AuthTokensResponse;
     accessTokenExpiresIn: number;
+    accountId: string;
   }
 }

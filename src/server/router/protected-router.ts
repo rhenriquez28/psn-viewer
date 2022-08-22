@@ -7,10 +7,7 @@ import { createRouter } from "./context";
 export function createProtectedRouter() {
   return createRouter().middleware(({ ctx, next }) => {
     if (!ctx.session || !ctx.session.authorization) {
-      throw new trpc.TRPCError({
-        code: "UNAUTHORIZED",
-        message: "Your session has expired, please authenticate again.",
-      });
+      throw unauthorizedError;
     }
     return next({
       ctx: {
@@ -25,3 +22,8 @@ export function createProtectedRouter() {
     });
   });
 }
+
+export const unauthorizedError = new trpc.TRPCError({
+  code: "UNAUTHORIZED",
+  message: "Your session has expired, please authenticate again.",
+});

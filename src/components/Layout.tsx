@@ -1,10 +1,11 @@
-import { Spin } from "antd";
+import { GithubOutlined, TwitterOutlined } from "@ant-design/icons";
 import debounce from "lodash.debounce";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChangeEvent, useState } from "react";
 import { trpc } from "../utils/trpc";
+import LoadingSpinner from "./LoadingSpinner";
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { status } = useSession();
@@ -25,9 +26,12 @@ const Navbar: React.FC<{
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [isInputActive, setIsInputActive] = useState(false);
-  const { data, isLoading } = trpc.useQuery(["search", searchQuery], {
-    enabled: !!searchQuery,
-  });
+  const { data, isLoading } = trpc.useQuery(
+    ["search", { query: searchQuery }],
+    {
+      enabled: !!searchQuery,
+    }
+  );
   const debouncedSetSearchQuery = debounce(
     (e: ChangeEvent<HTMLInputElement>) => {
       if (!isInputActive) {
@@ -50,7 +54,7 @@ const Navbar: React.FC<{
 
   return (
     <div className="py-4 px-8 flex justify-between items-center w-full top-0 bg-gray-800 text-zinc-300 shadow-md">
-      <Link href={"/"}>
+      <Link href={status === "authenticated" ? "/" : "/welcome"}>
         <div className="font-normal text-2xl cursor-pointer">PSN Viewer</div>
       </Link>
 
@@ -67,9 +71,7 @@ const Navbar: React.FC<{
           {showSearchResults ? (
             <div className="absolute top-9 w-full bg-white z-30 h-48 shadow-md rounded-sm overflow-y-scroll">
               {isLoading ? (
-                <div className="flex items-center justify-center h-full">
-                  <Spin size="large" />
-                </div>
+                <LoadingSpinner className="h-full" />
               ) : (
                 data?.results?.map(({ accountId, avatarUrl, onlineId }) => {
                   return (
@@ -95,11 +97,26 @@ const Navbar: React.FC<{
         </div>
       ) : null}
 
-      <div className="flex">
-        <div className="w-28">social share placeholder</div>
+      <div className="flex items-center justify-center">
+        <a
+          className="hover:text-zinc-50"
+          href="https://twitter.com/rhenriquez28"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <TwitterOutlined style={{ fontSize: "28px" }} />
+        </a>
+        <a
+          className="hover:text-zinc-50"
+          href="https://github.com/rhenriquez28/psn-viewer"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <GithubOutlined className="ml-4" style={{ fontSize: "28px" }} />
+        </a>
         {status === "authenticated" ? (
           <button
-            className="ml-2"
+            className="ml-4"
             onClick={() => signOut({ callbackUrl: "/welcome" })}
           >
             Sign Out

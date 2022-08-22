@@ -1,10 +1,13 @@
-import { Spin, Tabs } from "antd";
+import { Tabs } from "antd";
 import classNames from "classnames";
 import type { NextPage } from "next";
 import Image from "next/image";
 import { useRouter } from "next/router";
+import { TrophyType } from "psn-api";
 import React from "react";
 import ImageGallery, { ReactImageGalleryItem } from "react-image-gallery";
+import Error from "../components/Error";
+import LoadingSpinner from "../components/LoadingSpinner";
 import styles from "../styles/game.module.scss";
 import { ArrayElement, Game, GamePlatforms } from "../types";
 import { inferQueryOutput, trpc } from "../utils/trpc";
@@ -19,38 +22,18 @@ const Game: NextPage = () => {
         name: name as string,
         npCommunicationId: npCommunicationId as string,
         isPS5: isPS5 === "true",
-        userId: userId as string,
+        accountId: userId as string,
       },
     ],
     { refetchOnWindowFocus: false }
   );
 
   if (isLoading || isIdle) {
-    return (
-      <div className="flex items-center justify-center">
-        <Spin size="large" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center text-3xl">
-        <div>{error.message}</div>
-        <button
-          className="action-button mt-2"
-          onClick={() =>
-            error.data?.code !== "UNAUTHORIZED"
-              ? router.back()
-              : router.push("/welcome")
-          }
-        >
-          {error.data?.code !== "UNAUTHORIZED"
-            ? "Go Back"
-            : "Authenticate yourself!"}
-        </button>
-      </div>
-    );
+    return <Error error={error} />;
   }
 
   const summaryImages: [string, string] = [
@@ -88,7 +71,7 @@ const Game: NextPage = () => {
         platforms={data.info.platforms}
       />
 
-      <Tabs className="px-8" defaultActiveKey="1">
+      <Tabs className="px-8" defaultActiveKey={userId ? "2" : "1"}>
         <Tabs.TabPane tab="Details" key="1">
           <GameDetails
             images={data.info.screenshots}
@@ -98,6 +81,8 @@ const Game: NextPage = () => {
         </Tabs.TabPane>
 
         <Tabs.TabPane tab="Trophies" key="2">
+          <UserTrophySummary summary={data.userTitleTrophiesSummary} />
+
           {data.trophies.map((trophy) => (
             <div key={trophy.id} className="mb-4">
               <TrophyCard trophy={trophy} />
@@ -244,6 +229,61 @@ const MetadataCell: React.FC<{
       ) : (
         <div className={styles.metadataCellData}>{data}</div>
       )}
+    </div>
+  );
+};
+
+const UserTrophySummary: React.FC<{
+  summary: inferQueryOutput<"game">["userTitleTrophiesSummary"];
+}> = ({ summary }) => {
+  return (
+    <div className="flex items-center justify-between shadow-md p-2 max-w-4xl mx-auto mb-4 text-lg">
+      <div className="flex items-center">
+        <div className="w-14 h-14 relative">
+          <Image
+            src={summary.user.avatarUrl ?? ""}
+            layout="fill"
+            className="rounded-full"
+            priority={true}
+            alt="profile avatar"
+          />
+        </div>
+
+        <div className="text-black ml-3">{summary.user.onlineId}</div>
+      </div>
+      <div className="flex items-center justify-around text-base">
+        <div className="mr-4">
+          {`${summary.trophies.earnedByUser.total}/${summary.trophies.total} Trophies`}
+        </div>
+        {Object.keys(summary.trophies.earnedByUser)
+          .filter((key) => key !== "total")
+          .map((key, index) => {
+            const trophyType = key as TrophyType;
+            return (
+              <TrophySummaryCounter
+                key={index}
+                type={trophyType}
+                userTotal={summary.trophies.earnedByUser[trophyType]}
+              />
+            );
+          })
+          .reverse()}
+      </div>
+    </div>
+  );
+};
+
+const TrophySummaryCounter: React.FC<{
+  userTotal: number;
+  type: TrophyType;
+}> = ({ userTotal, type }) => {
+  return (
+    <div className="flex items-center justify-center">
+      <div className="ml-2">{`${userTotal}`}</div>
+
+      <div className="h-16 w-16 relative">
+        <Image src={`/${type}.png`} layout="fill" alt={`${type} trophy`} />
+      </div>
     </div>
   );
 };

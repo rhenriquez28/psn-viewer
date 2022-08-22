@@ -20,22 +20,31 @@ import {
 import superjson from "superjson";
 import { z } from "zod";
 import { Game, GameGenres, GamePlatforms } from "../../types";
-import { createProtectedRouter } from "./protected-router";
+import { createProtectedRouter, unauthorizedError } from "./protected-router";
 
 export const appRouter = createProtectedRouter()
   .transformer(superjson)
   .query("user", {
-    input: z.string().optional(),
+    input: z.object({
+      accountId: z.string().optional(),
+    }),
     async resolve({ ctx, input }) {
       try {
         const [trophySummaryResp, userTitlesResp] = await Promise.all([
-          getUserTrophyProfileSummary(ctx.session.authPayload, input ?? "me"),
-          getUserTitles(ctx.session.authPayload, input ?? "me"),
+          getUserTrophyProfileSummary(
+            ctx.session.authPayload,
+            input.accountId ?? "me"
+          ),
+          getUserTitles(ctx.session.authPayload, input.accountId ?? "me"),
         ]);
+
+        if (!trophySummaryResp.accountId) {
+          throw trophySummaryResp;
+        }
 
         const userProfileResp = await getProfileFromAccountId(
           ctx.session.authPayload,
-          trophySummaryResp.accountId
+          input.accountId ?? ctx.session.accountId
         );
 
         // Filtering to only show PS4 and PS5 titles due to PlatPrices API limitation
@@ -63,8 +72,8 @@ export const appRouter = createProtectedRouter()
 
         return {
           profile: {
-            username: userProfileResp.onlineId,
-            avatar: userProfileResp.avatars[2]?.url,
+            onlineId: userProfileResp.onlineId,
+            avatarUrl: userProfileResp.avatars[2]?.url,
             isPlus: userProfileResp.isPlus,
             earnedTrophies: trophySummaryResp.earnedTrophies,
             trophyLevel: Number(trophySummaryResp.trophyLevel),
@@ -80,12 +89,16 @@ export const appRouter = createProtectedRouter()
             npCommunicationId: title.npCommunicationId,
           })),
         };
-      } catch (error) {
-        throw new trpc.TRPCError({
-          code: "FORBIDDEN",
-          message:
-            "This user doesn't allow for their information to be accessed. We're sorry :(",
-        });
+      } catch (e) {
+        const error = e as PsnApiErrorResponse;
+        if (error.error.code === PsnApiErrorCode.ACCESS_CONTROL_ERROR) {
+          throw new trpc.TRPCError({
+            code: "FORBIDDEN",
+            message:
+              "This user doesn't allow for their information to be accessed. We're sorry :(",
+          });
+        }
+        throw unauthorizedError;
       }
     },
   })
@@ -94,36 +107,45 @@ export const appRouter = createProtectedRouter()
       name: z.string(),
       npCommunicationId: z.string(),
       isPS5: z.boolean(),
-      userId: z.string().optional(),
+      accountId: z.string().optional(),
     }),
     async resolve({ ctx, input }) {
-      const options: TrophyCallOptions = {
-        npServiceName: input.isPS5 ? "trophy2" : "trophy",
-      };
-
-      const [titleTrophies, userTitleTrophies] = await fetchTrophyLists(
-        { authPayload: ctx.session.authPayload, ...input },
-        options
-      );
-
       const info = await getGameInfo(
         input.npCommunicationId,
         ctx.prisma,
         input.name
       );
 
+      const { onlineId, avatars } = await getProfileFromAccountId(
+        ctx.session.authPayload,
+        input.accountId ?? ctx.session.accountId
+      );
+
+      const [titleTrophies, userTitleTrophies] = await fetchTrophyLists(
+        { authPayload: ctx.session.authPayload, ...input },
+        {
+          npServiceName: input.isPS5 ? "trophy2" : "trophy",
+        }
+      );
+
       return {
         info,
+        userTitleTrophiesSummary: {
+          user: { onlineId, avatarUrl: avatars[2]?.url },
+          trophies: getUserTitleTrophiesSummary(userTitleTrophies),
+        },
         trophies: mergeTrophyLists(titleTrophies, userTitleTrophies),
       };
     },
   })
   .query("search", {
-    input: z.string(),
+    input: z.object({
+      query: z.string(),
+    }),
     async resolve({ ctx, input }) {
       const response = await makeUniversalSearch(
         ctx.session.authPayload,
-        input,
+        input.query,
         "SocialAllAccounts"
       );
       return {
@@ -295,6 +317,25 @@ const mergeTrophyLists = (
   });
 };
 
+const getUserTitleTrophiesSummary = (userTitleTrophies: Trophy[]) => {
+  const summary: {
+    total: number;
+    earnedByUser: TrophyCounts & { total: number };
+  } = {
+    total: userTitleTrophies.length,
+    earnedByUser: { bronze: 0, silver: 0, gold: 0, platinum: 0, total: 0 },
+  };
+
+  userTitleTrophies.forEach((trophy) => {
+    if (trophy.earned) {
+      summary.earnedByUser[trophy.trophyType] += 1;
+      summary.earnedByUser.total += 1;
+    }
+  });
+
+  return summary;
+};
+
 const mapToPrismaRelationObject = <
   T extends readonly string[],
   U extends string[]
@@ -443,6 +484,18 @@ type PlatPricesAPIResponse = {
   apiLimit: string;
   apiUsage: string;
 };
+
+type PsnApiErrorResponse = {
+  error: {
+    referenceId: string;
+    code: number;
+    message: string;
+  };
+};
+
+enum PsnApiErrorCode {
+  ACCESS_CONTROL_ERROR = 2240526,
+}
 
 // export type definition of API
 export type AppRouter = typeof appRouter;

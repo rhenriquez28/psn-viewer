@@ -2,10 +2,17 @@ import NextAuth, { type NextAuthOptions } from "next-auth";
 import { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 import {
+  AuthorizationPayload,
   exchangeCodeForAccessToken,
   exchangeNpssoForCode,
   exchangeRefreshTokenForAuthTokens,
+  getUserTrophyProfileSummary,
 } from "psn-api";
+
+async function getAuthenticatedAccountId(authPayload: AuthorizationPayload) {
+  const { accountId } = await getUserTrophyProfileSummary(authPayload, "me");
+  return accountId;
+}
 
 async function refreshAccessToken(token: JWT): Promise<JWT> {
   try {
@@ -35,6 +42,9 @@ export const authOptions: NextAuthOptions = {
         token.authorization = user.authorization;
         token.accessTokenExpiresIn =
           Date.now() + token.authorization.expiresIn * 1000;
+        token.accountId = await getAuthenticatedAccountId({
+          accessToken: token.authorization.accessToken,
+        });
       }
 
       if (Date.now() < token.accessTokenExpiresIn) {
@@ -49,6 +59,7 @@ export const authOptions: NextAuthOptions = {
         session.authPayload = {
           accessToken: session.authorization.accessToken,
         };
+        session.accountId = token.accountId;
       }
       return session;
     },

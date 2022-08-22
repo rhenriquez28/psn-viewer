@@ -9,18 +9,18 @@ const Welcome: NextPage = () => {
     <div className="flex flex-col justify-center items-center text-lg p-8">
       <div className="font-bold text-4xl">Welcome to PSN Viewer!</div>
       <div>
-        In order to use the app we need to authenticate you. Please follow these
-        steps:
+        In order to use the app we need to authenticate you with a token that
+        Sony provides. Please follow these steps:
       </div>
       <ol className="list-decimal flex flex-col justify-center items-center max-w-lg mx-auto mt-4 [&>*]:mb-2">
         <li>
           In your web browser, visit{" "}
           <a
-            href="https://www.playstation.com/"
+            href="https://www.playstation.com"
             rel="noreferrer"
             target="_blank"
           >
-            https://www.playstation.com/
+            https://www.playstation.com
           </a>
           , click the &quot;Sign In&quot; button, and log in with a PSN account.
         </li>

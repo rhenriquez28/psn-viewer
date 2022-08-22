@@ -1,10 +1,12 @@
-import { Progress, Spin } from "antd";
+import { Progress } from "antd";
 import classnames from "classnames";
 import type { NextPage } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { TrophyCounts, TrophyType } from "psn-api";
+import Error from "../components/Error";
+import LoadingSpinner from "../components/LoadingSpinner";
 import TrophyIcon from "../components/TrophyIcon";
 import styles from "../styles/index.module.scss";
 import { ArrayElement } from "../types";
@@ -14,7 +16,7 @@ const Home: NextPage = () => {
   const router = useRouter();
   const { id } = router.query;
   const { data, isLoading, error, isIdle } = trpc.useQuery(
-    ["user", id as string],
+    ["user", { accountId: id as string }],
     {
       retry: false,
       refetchOnMount: false,
@@ -23,31 +25,11 @@ const Home: NextPage = () => {
   );
 
   if (isLoading || isIdle) {
-    return (
-      <div className="flex items-center justify-center">
-        <Spin size="large" />
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center text-3xl">
-        <div>{error.message}</div>
-        <button
-          className="action-button mt-2"
-          onClick={() =>
-            error.data?.code === "FORBIDDEN"
-              ? router.back()
-              : router.push("/welcome")
-          }
-        >
-          {error.data?.code === "FORBIDDEN"
-            ? "Go Back"
-            : "Authenticate yourself!"}
-        </button>
-      </div>
-    );
+    return <Error error={error} />;
   }
 
   return (
@@ -90,7 +72,7 @@ const ProfileSummary: React.FC<{
             }`}
           >
             <Image
-              src={profile.avatar ?? ""}
+              src={profile.avatarUrl ?? ""}
               layout="fill"
               className="rounded-full"
               priority={true}
@@ -98,7 +80,7 @@ const ProfileSummary: React.FC<{
             />
           </div>
 
-          <div className="text-lg text-black ml-3">{profile.username}</div>
+          <div className="text-lg text-black ml-3">{profile.onlineId}</div>
         </div>
 
         <div className="flex justify-center">

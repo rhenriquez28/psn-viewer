@@ -237,7 +237,7 @@ const MetadataCell: React.FC<{
           href={data}
           target="_blank"
           rel="noreferrer"
-          className={`underline ${styles.metadataCellData}`}
+          className={`${styles.metadataCellData}`}
         >
           {data}
         </a>

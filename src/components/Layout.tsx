@@ -3,7 +3,7 @@ import debounce from "lodash.debounce";
 import { signOut, useSession } from "next-auth/react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChangeEvent, useEffect, useState } from "react";
+import { ChangeEvent, useState } from "react";
 import { trpc } from "../utils/trpc";
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -24,23 +24,29 @@ const Navbar: React.FC<{
 }> = ({ status }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [isInputActive, setIsInputActive] = useState(false);
   const { data, isLoading } = trpc.useQuery(["search", searchQuery], {
     enabled: !!searchQuery,
   });
   const debouncedSetSearchQuery = debounce(
-    (e: ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value),
+    (e: ChangeEvent<HTMLInputElement>) => {
+      if (!isInputActive) {
+        setIsInputActive(true);
+      }
+      setSearchQuery(e.target.value);
+    },
     500
   );
-  const debouncedSetShowSearchResults = debounce(
-    (value: boolean) => setShowSearchResults(value),
-    200
-  );
-
-  useEffect(() => {
-    if (searchQuery && !showSearchResults) {
-      setShowSearchResults(true);
+  const debouncedSetShowSearchResults = debounce((value: boolean) => {
+    if (value === false) {
+      setIsInputActive(value);
     }
-  }, [searchQuery]);
+    setShowSearchResults(value);
+  }, 200);
+
+  if (searchQuery && isInputActive && !showSearchResults) {
+    setShowSearchResults(true);
+  }
 
   return (
     <div className="py-4 px-8 flex justify-between items-center w-full top-0 bg-gray-800 text-zinc-300 shadow-md">
@@ -113,7 +119,7 @@ const Footer = () => {
         in any way.
       </div>
       <a
-        className="block max-w-max underline"
+        className="block max-w-max"
         href="https://platprices.com/"
         target="_blank"
         rel="noreferrer"
@@ -121,7 +127,6 @@ const Footer = () => {
         Game info provided by PlatPrices
       </a>
       <a
-        className="underline"
         href="https://www.flaticon.com/free-icons/trophy"
         target="_blank"
         title="trophy icons"

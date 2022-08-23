@@ -15,6 +15,7 @@ export default defineNextConfig({
   swcMinify: true,
   images: {
     domains: [
+      "psn.rhen.dev",
       "image.api.playstation.com",
       "static-resource.np.community.playstation.net",
       "psnobj.prod.dl.playstation.net",

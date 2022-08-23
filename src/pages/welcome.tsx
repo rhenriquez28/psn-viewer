@@ -1,5 +1,6 @@
 import { NextPage } from "next";
 import { signIn } from "next-auth/react";
+import Head from "next/head";
 import { useState } from "react";
 
 const Welcome: NextPage = () => {
@@ -7,6 +8,9 @@ const Welcome: NextPage = () => {
 
   return (
     <div className="flex flex-col justify-center items-center text-lg p-8">
+      <Head>
+        <title>Welcome! - PSN Viewer</title>
+      </Head>
       <div className="font-bold text-4xl">Welcome to PSN Viewer!</div>
       <div>
         In order to use the app we need to authenticate you with a token that

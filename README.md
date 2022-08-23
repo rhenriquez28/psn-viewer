@@ -1,131 +1,34 @@
-# Create T3 App
+# PSN Viewer - A mini PSN Profiles made with the T3-Stack
 
-This is an app bootstrapped according to the [init.tips](https://init.tips) stack, also known as the T3-Stack.
+# Features
 
-## Why are there `.js` files in here?
+- See your PSN profile with your most recent games
+- Visit a game that you've played to check screenshots, description and metadata from the PS Store (courtesy of [PlatPrices](https://platprices.com/developers.php)) and check the trophies you've earned for that game
+- Search for any visible user on PSN and you can also see their profile and what trophies they've earned in the games they've played
+- (Coming soon) Compare trophies with another user if you both have played the exact same game.
 
-As per [T3-Axiom #3](https://github.com/t3-oss/create-t3-app/tree/next#3-typesafety-isnt-optional), we believe take typesafety as a first class citizen. Unfortunately, not all frameworks and plugins support TypeScript which means some of the configuration files have to be `.js` files.
+# Why
 
-We try to emphasize that these files are javascript for a reason, by explicitly declaring its type (`cjs` or `mjs`) depending on what's supported by the library it is used by. Also, all the `js` files in this project are still typechecked using a `@ts-check` comment at the top.
+I started this project originally as a way to learn [Nx](https://nx.dev/) with Angular. Got frustrated when trying to add a Nest.js backend. Found [Theo](https://twitter.com/t3dotgg) midway through. Really liked his views and found the [T3-Stack](https://init.tips) very intriguing. I wanted to learn React for the longest time so I decided to bite the bullet, used [create-t3-app](https://create.t3.gg/) to spin up a new project and migrated my Angular HTML to JSX and finished it here.
 
-## What's next? How do I make an app with this?
+My immediate conclusions are that I enjoy React more than Angular now. I'm quite happy that my file structure is waaaay more simple than any Angular project I've ever worked with, and I find that creating components via functions that return JSX is faster and more enjoyable for me than SFCs or the Angular way.
 
-We try to keep this project as simple as possible, so you can start with the most basic configuration and then move on to more advanced configuration.
+If you want to see the source code for the previous Angular project, you can check it out [here.](https://github.com/rhenriquez28/psn-viewer-old)
 
-If you are not familiar with the different technologies used in this project, please refer to the respective docs. If you still are in the wind, please join our [Discord](https://t3.gg/discord) and ask for help.
+# What's it made of?
 
-- [Next-Auth.js](https://next-auth.js.org)
-- [Prisma](https://prisma.io)
-- [TailwindCSS](https://tailwindcss.com)
-- [tRPC](https://trpc.io) (using @next version? [see v10 docs here](https://alpha.trpc.io))
+- T3 Stack
 
-## How do I deploy this?
+  - TypeScript
+  - Next.js
+  - NextAuth.js
+  - Tailwind CSS
+  - tRPC
+  - Prisma
 
-### Vercel
-
-We recommend deploying to [Vercel](https://vercel.com/?utm_source=t3-oss&utm_campaign=oss). It makes it super easy to deploy NextJs apps.
-
-- Push your code to a GitHub repository.
-- Go to [Vercel](https://vercel.com/?utm_source=t3-oss&utm_campaign=oss) and sign up with GitHub.
-- Create a Project and import the repository you pushed your code to.
-- Add your environment variables.
-- Click **Deploy**
-- Now whenever you push a change to your repository, Vercel will automatically redeploy your website!
-
-### Docker
-
-You can also dockerize this stack and deploy a container.
-
-1. In your [next.config.mjs](./next.config.mjs), add the `output: "standalone"` option to your config.
-2. Create a `.dockerignore` file with the following contents:
-   <details>
-   <summary>.dockerignore</summary>
-
-   ```
-   Dockerfile
-   .dockerignore
-   node_modules
-   npm-debug.log
-   README.md
-   .next
-   .git
-   ```
-
-  </details>
-
-3. Create a `Dockerfile` with the following contents:
-   <details>
-   <summary>Dockerfile</summary>
-
-   ```Dockerfile
-   # Install dependencies only when needed
-   FROM node:16-alpine AS deps
-   # Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
-   RUN apk add --no-cache libc6-compat
-   WORKDIR /app
-
-   # Install dependencies based on the preferred package manager
-   COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-   RUN \
-      if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-      elif [ -f package-lock.json ]; then npm ci; \
-      elif [ -f pnpm-lock.yaml ]; then yarn global add pnpm && pnpm i; \
-      else echo "Lockfile not found." && exit 1; \
-      fi
-
-
-   # Rebuild the source code only when needed
-   FROM node:16-alpine AS builder
-   WORKDIR /app
-   COPY --from=deps /app/node_modules ./node_modules
-   COPY . .
-
-   # Next.js collects completely anonymous telemetry data about general usage.
-   # Learn more here: https://nextjs.org/telemetry
-   # Uncomment the following line in case you want to disable telemetry during the build.
-   # ENV NEXT_TELEMETRY_DISABLED 1
-
-   RUN yarn build
-
-   # If using npm comment out above and use below instead
-   # RUN npm run build
-
-   # Production image, copy all the files and run next
-   FROM node:16-alpine AS runner
-   WORKDIR /app
-
-   ENV NODE_ENV production
-   # Uncomment the following line in case you want to disable telemetry during runtime.
-   # ENV NEXT_TELEMETRY_DISABLED 1
-
-   RUN addgroup --system --gid 1001 nodejs
-   RUN adduser --system --uid 1001 nextjs
-
-   # You only need to copy next.config.js if you are NOT using the default configuration
-   # COPY --from=builder /app/next.config.js ./
-   COPY --from=builder /app/public ./public
-   COPY --from=builder /app/package.json ./package.json
-
-   # Automatically leverage output traces to reduce image size
-   # https://nextjs.org/docs/advanced-features/output-file-tracing
-   COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-   COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-   USER nextjs
-
-   EXPOSE 3000
-
-   ENV PORT 3000
-
-   CMD ["node", "server.js"]
-   ```
-
-  </details>
-
-4. You can now build an image to deploy yourself, or use a PaaS such as [Railway's](https://railway.app) automated [Dockerfile deployments](https://docs.railway.app/deploy/dockerfiles) to deploy your app.
-
-## Useful resources
-
-Here are some resources that we commonly refer to:
-
-- [Protecting routes with Next-Auth.js](https://next-auth.js.org/configuration/nextjs#unstable_getserversession)
+- PlatPrices API
+- [psn-api](https://github.com/achievements-app/psn-api)
+- [Ant Design](https://ant.design/)
+- [React Image Gallery](https://github.com/xiaolin/react-image-gallery)
+- MySQL (via [Planetscale](https://planetscale.com/))
+- Deployed via [Vercel](https://vercel.com/)

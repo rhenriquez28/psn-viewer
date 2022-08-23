@@ -1,6 +1,8 @@
 import { Tabs } from "antd";
 import classNames from "classnames";
 import type { NextPage } from "next";
+import { useSession } from "next-auth/react";
+import Head from "next/head";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import { TrophyType } from "psn-api";
@@ -13,7 +15,13 @@ import { ArrayElement, Game, GamePlatforms } from "../types";
 import { inferQueryOutput, trpc } from "../utils/trpc";
 
 const Game: NextPage = () => {
+  const { status } = useSession();
   const router = useRouter();
+
+  if (status === "unauthenticated") {
+    router.push("/welcome");
+  }
+
   const { name, npCommunicationId, isPS5, userId } = router.query;
   const { data, isLoading, isIdle, error } = trpc.useQuery(
     [
@@ -65,6 +73,9 @@ const Game: NextPage = () => {
 
   return (
     <>
+      <Head>
+        <title>{`${data.userTitleTrophiesSummary.user.onlineId}'s ${data.info.name} Trophies - PSN Viewer`}</title>
+      </Head>
       <GameSummary
         images={summaryImages}
         name={data.info.name}

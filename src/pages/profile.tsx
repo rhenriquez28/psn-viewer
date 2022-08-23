@@ -1,6 +1,8 @@
 import { Progress } from "antd";
 import classnames from "classnames";
 import type { NextPage } from "next";
+import { useSession } from "next-auth/react";
+import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -13,7 +15,13 @@ import { ArrayElement } from "../types";
 import { inferQueryOutput, trpc } from "../utils/trpc";
 
 const Home: NextPage = () => {
+  const { status } = useSession();
   const router = useRouter();
+
+  if (status === "unauthenticated") {
+    router.push("/welcome");
+  }
+
   const { id } = router.query;
   const { data, isLoading, error, isIdle } = trpc.useQuery(
     ["user", { accountId: id as string }],
@@ -34,9 +42,12 @@ const Home: NextPage = () => {
 
   return (
     <div className="p-8 flex flex-col items-center">
+      <Head>
+        <title>{`${data.profile.onlineId}'s Profile - PSN Viewer`}</title>
+      </Head>
       <ProfileSummary className="mb-4 max-w-xl" profile={data.profile} />
 
-      <div>My Games</div>
+      <div className="text-xl mb-4">Most Recent Games</div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 justify-center items-center gap-x-3">
         {data.games.map((game, index) => {

@@ -20,6 +20,7 @@ export default defineNextConfig({
       "psnobj.prod.dl.playstation.net",
       "psn-rsc.prod.dl.playstation.net",
     ],
+    minimumCacheTTL: 60,
   },
   async redirects() {
     return [

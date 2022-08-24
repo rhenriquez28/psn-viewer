@@ -21,6 +21,7 @@
     "lodash.debounce": "^4.0.8",
     "next": "12.2.3",
     "next-auth": "^4.10.3",
+    "next-plausible": "^3.2.0",
     "psn-api": "^2.7.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",

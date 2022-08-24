@@ -1,4 +1,4 @@
-# PSN Viewer - A mini PSN Profiles made with the T3-Stack
+# PSN Viewer - A mini [PSNProfiles](https://psnprofiles.com/) made with the T3-Stack
 
 # Features
 

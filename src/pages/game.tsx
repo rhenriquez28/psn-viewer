@@ -175,7 +175,7 @@ const GameDetails: React.FC<{
       <div className="mb-12">
         <div className="text-3xl text-black mb-4 text-center">Media</div>
 
-        <div className="w-full max-w-5xl flex mx-auto">
+        <div className="w-full max-w-5xl mx-auto">
           <ImageGallery items={items} />
         </div>
       </div>

@@ -1,6 +1,7 @@
 // src/pages/_app.tsx
 import { withTRPC } from "@trpc/next";
 import { SessionProvider } from "next-auth/react";
+import PlausibleProvider from "next-plausible";
 import type { AppType } from "next/dist/shared/lib/utils";
 import superjson from "superjson";
 import Layout from "../components/Layout";
@@ -12,11 +13,13 @@ const MyApp: AppType = ({
   pageProps: { session, ...pageProps },
 }) => {
   return (
-    <SessionProvider session={session}>
-      <Layout>
-        <Component {...pageProps} />
-      </Layout>
-    </SessionProvider>
+    <PlausibleProvider domain="psn.rhen.dev">
+      <SessionProvider session={session}>
+        <Layout>
+          <Component {...pageProps} />
+        </Layout>
+      </SessionProvider>
+    </PlausibleProvider>
   );
 };
 

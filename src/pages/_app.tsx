@@ -3,6 +3,7 @@ import { withTRPC } from "@trpc/next";
 import { SessionProvider } from "next-auth/react";
 import PlausibleProvider from "next-plausible";
 import type { AppType } from "next/dist/shared/lib/utils";
+import Head from "next/head";
 import superjson from "superjson";
 import Layout from "../components/Layout";
 import type { AppRouter } from "../server/router";
@@ -12,8 +13,19 @@ const MyApp: AppType = ({
   Component,
   pageProps: { session, ...pageProps },
 }) => {
+  const description = "A mini PSNProfiles made with Next.js";
+  const title = "PSN Viewer";
+
   return (
     <PlausibleProvider domain="psn.rhen.dev">
+      <Head>
+        <title>{title}</title>
+        <meta name="description" content={description} />
+        <meta property="og:title" content={title} />
+        <meta property="og:description" content={description} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="theme-color" content="#000000" />
+      </Head>
       <SessionProvider session={session}>
         <Layout>
           <Component {...pageProps} />

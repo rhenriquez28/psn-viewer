@@ -99,7 +99,7 @@ const Navbar: React.FC<{
 
       <div className="flex items-center justify-center">
         <a
-          className="hover:text-zinc-50"
+          className="hover:text-zinc-50 hidden sm:block"
           href="https://twitter.com/rhenriquez28"
           target="_blank"
           rel="noreferrer"
@@ -107,7 +107,7 @@ const Navbar: React.FC<{
           <TwitterOutlined style={{ fontSize: "28px" }} />
         </a>
         <a
-          className="hover:text-zinc-50"
+          className="hover:text-zinc-50 hidden sm:block"
           href="https://github.com/rhenriquez28/psn-viewer"
           target="_blank"
           rel="noreferrer"

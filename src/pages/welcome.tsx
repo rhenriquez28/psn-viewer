@@ -16,7 +16,7 @@ const Welcome: NextPage = () => {
         In order to use the app we need to authenticate you with a token that
         Sony provides. Please follow these steps:
       </div>
-      <ol className="list-decimal flex flex-col justify-center items-center max-w-lg mx-auto mt-4 [&>*]:mb-2">
+      <ol className="list-decimal w-full max-w-lg mx-auto mt-4 [&>*]:mb-2">
         <li>
           In your web browser, visit{" "}
           <a
@@ -32,6 +32,7 @@ const Welcome: NextPage = () => {
         <li>
           After that, in the same browser, visit{" "}
           <a
+            className="break-words"
             href="https://ca.account.sony.com/api/v1/ssocookie"
             rel="noreferrer"
             target="_blank"
@@ -39,7 +40,7 @@ const Welcome: NextPage = () => {
             https://ca.account.sony.com/api/v1/ssocookie
           </a>
           . You will see something like this:
-          <pre className="my-2">
+          <pre className="my-2 whitespace-pre-wrap">
             <code>{`{ "npsso": "<64 character token>" }`}</code>
           </pre>
           Copy your token without the double quotes and come back here.

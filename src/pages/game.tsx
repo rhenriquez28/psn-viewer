@@ -127,8 +127,8 @@ const GameSummary: React.FC<{
         />
       </div>
 
-      <div className="p-8 flex z-10">
-        <div className="h-[200px] w-[200px] -mt-20 mr-12 relative">
+      <div className="p-8 flex flex-col z-10 sm:flex-row items-center sm:items-start">
+        <div className="h-[200px] w-[200px] -mt-20 sm:mr-12 sm:mb-0 mb-6 relative">
           <Image
             className="rounded-[32px]"
             src={icon}
@@ -140,7 +140,7 @@ const GameSummary: React.FC<{
         <div className="flex flex-col">
           <div className="text-4xl mb-6">{name}</div>
 
-          <div className="flex">
+          <div className="flex justify-center sm:items-start">
             {platforms.map((platform, index) => {
               return (
                 <div
@@ -188,7 +188,7 @@ const GameDetails: React.FC<{
           dangerouslySetInnerHTML={{ __html: description }}
         />
 
-        <div className="grid grid-cols-2 justify-center pb-6 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 justify-center pb-6 gap-2">
           {metadata
             ? Object.keys(metadata).map((key, index) => {
                 return (
@@ -262,7 +262,7 @@ const UserTrophySummary: React.FC<{
 
         <div className="text-black ml-3">{summary.user.onlineId}</div>
       </div>
-      <div className="flex items-center justify-around text-base">
+      <div className="hidden sm:flex items-center justify-around text-base">
         <div className="mr-4">
           {`${summary.trophies.earnedByUser.total}/${summary.trophies.total} Trophies`}
         </div>
@@ -341,7 +341,7 @@ const TrophyCard: React.FC<{
         </div>
       </div>
 
-      <div className="flex justify-end items-center">
+      <div className="hidden sm:flex justify-end items-center">
         {isEarned && earnedOn !== "unearned" ? (
           <div
             className={`flex flex-col text-center ${styles.metadata} ${styles.earnedTime}`}

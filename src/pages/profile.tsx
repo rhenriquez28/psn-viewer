@@ -76,9 +76,9 @@ const ProfileSummary: React.FC<{
   return (
     <div className={`p-4 w-full h-fit shadow-md ${className}`}>
       <div className="flex justify-between">
-        <div className="flex items-center">
+        <div className="flex items-center mr-3">
           <div
-            className={`w-28 h-28 relative ${
+            className={`w-14 h-14 sm:w-28 sm:h-28 relative ${
               profile.isPlus ? styles.psPlus : ""
             }`}
           >
@@ -94,7 +94,7 @@ const ProfileSummary: React.FC<{
           <div className="text-lg text-black ml-3">{profile.onlineId}</div>
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex justify-center flex-wrap">
           {profile.earnedTrophies
             ? Object.keys(profile.earnedTrophies)
                 .map((trophyType, index) => {
@@ -236,7 +236,7 @@ const GameCard: React.FC<{
           </div>
         </div>
 
-        <div className="flex flex-col w-52">
+        <div className="flex-col w-52 hidden sm:flex">
           <div className="flex self-end mb-2">
             {Object.keys(game.earnedTrophies)
               .map((trophyType, index) => {

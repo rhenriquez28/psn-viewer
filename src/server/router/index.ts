@@ -270,11 +270,11 @@ const fetchTrophyLists = async (
   {
     authPayload,
     npCommunicationId,
-    userId,
+    accountId,
   }: {
     authPayload: AuthorizationPayload;
     npCommunicationId: string;
-    userId?: string;
+    accountId?: string;
   },
   options: TrophyCallOptions
 ): Promise<[TitleThinTrophy[], UserThinTrophy[]]> => {
@@ -283,7 +283,7 @@ const fetchTrophyLists = async (
       getTitleTrophies(authPayload, npCommunicationId, "all", options),
       getUserTrophiesEarnedForTitle(
         authPayload,
-        userId ?? "me",
+        accountId ?? "me",
         npCommunicationId,
         "all",
         options

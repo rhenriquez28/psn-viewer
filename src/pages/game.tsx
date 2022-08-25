@@ -140,7 +140,7 @@ const GameSummary: React.FC<{
         <div className="flex flex-col">
           <div className="text-4xl mb-6">{name}</div>
 
-          <div className="flex justify-center sm:items-start">
+          <div className="flex justify-center sm:justify-start">
             {platforms.map((platform, index) => {
               return (
                 <div

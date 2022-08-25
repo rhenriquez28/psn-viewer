@@ -24,11 +24,6 @@ export default withPlausibleProxy()({
         "psn-rsc.prod.dl.playstation.net",
       ],
     },
-    experimental: {
-      images: {
-        unoptimized: true,
-      },
-    },
     async redirects() {
       return [
         {
